@@ -1,0 +1,235 @@
+.about-page {
+   font-family: "Poppins", sans-serif;
+  /* margin-top: 1850px; */
+}
+
+/* 1. Hero */
+.about-hero {
+  position: relative;
+  background-image: url('/src/assets/images/homebanner.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: white;
+  /* padding: 100px 20px; */
+  text-align: center;
+  z-index: 1;
+  height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.about-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7); /* semi-transparent dark layer */
+  z-index: -1;
+}
+
+
+
+.about-hero h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+/* 2. Side-by-Side Section */
+.about-content {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 60px 10%;
+  gap: 40px;
+  align-items: center;
+}
+
+.about-content .image-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.about-content .image-container img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.about-content .text-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.about-content .text-container h2 {
+  margin-bottom: 20px;
+}
+
+/* 3. Feature List Section */
+.about-values {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 60px 10%;
+  background-color: #f9f9f9;
+  gap: 40px;
+}
+
+.about-values .text-list {
+  flex: 1;
+  min-width: 280px;
+}
+
+.about-values ul {
+  list-style: none;
+  padding: 0;
+}
+
+.about-values li {
+  margin-bottom: 20px;
+  /* display: flex;
+  align-items: flex-start; */
+  gap: 10px;
+  color: #333;
+}
+
+.about-values .icon {
+  color: #D0021B;
+  font-size: 1.2rem;
+  margin-top: 4px;
+}
+
+.about-values .image-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.about-values img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+/* 4. CTA Section */
+.about-cta {
+  background-image: url('/src/assets/images/homebanner.jpg'); /* ✅ Adjust the path */
+  background-attachment: fixed; /* 📌 This makes it fixed during scroll */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  text-align: center;
+  /* padding: 100px 20px; */
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+
+.about-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5); /* Optional: Dark overlay for better text contrast */
+  z-index: -1;
+}
+
+
+
+
+.about-cta button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color:#D0021B;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.left-side{
+  padding-left: 20px;
+  color: #2F80ED;
+}
+
+
+/* 3. Why Brokerage Broken Section */
+.why-broken {
+  padding: 60px 10%;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.why-broken h2 {
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: #1e1e1e;
+}
+
+.why-broken .broken {
+  color: red;
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+}
+
+.reason-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.reason-card .emoji {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.reason-card h4 {
+  margin-bottom: 10px;
+}
+
+.reason-card p,
+.reason-card ul {
+  color: #555;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.reason-card ul {
+  padding-left: 20px;
+}
+
+@media(max-width:600px){
+  /* .about-page{
+    margin-top: 2885px !important;
+  } */
+}
+
+.head2{
+  color: #2F80ED;
+  font-size: 30px;
+}
+
+.head21{
+  color: #2F80ED;
+  font-size: 20px;
+}
+
+.head2-para{
+  font-size: 16px;
+  line-height: 30px;
+  word-spacing: 1px;
+}
+
+@media(max-width:1024px){
+  /* .about-page{
+    padding-top:450px !important;
+  } */
+}
+
+
+
+@media(max-width:768px){
+  /* .about-page{
+    padding-top:1020px !important;
+  } */
+}
