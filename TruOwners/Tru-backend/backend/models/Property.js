@@ -21,21 +21,23 @@ const propertySchema = new Schema({
     idProofType: String,
     idProofNumber: String,
     idProofImageUrl: String,
-    name: String, // Optional, can be used if different from profile
-    email: String // Optional
+    name: String,
+    email: String,
+    electricityBill: String,
+    electricityBillImageUrl: String,
   },
-  rent: { type: Number }, // Made optional as it's not needed for sale
-  price: { type: Number }, // Unified field for Sale Price, Commercial Price, Lease Amount
+  rent: { type: Number },
+  price: { type: Number },
   deposit: { type: Number },
-  listingType: { 
-    type: String, 
-    enum: ['rent', 'sell', 'lease', 'commercial'], 
-    default: 'rent' 
+  listingType: {
+    type: String,
+    enum: ['rent', 'sell', 'lease', 'commercial'],
+    default: 'rent'
   },
-  category: { 
-    type: String, 
-    enum: ['residential', 'commercial'], 
-    default: 'residential' 
+  category: {
+    type: String,
+    enum: ['residential', 'commercial'],
+    default: 'residential'
   },
   propertyType: { type: String, enum: ['apartment', 'house', 'villa', 'condo', 'office', 'shop', 'warehouse', 'plot'] },
   bedrooms: { type: Number },
@@ -43,10 +45,10 @@ const propertySchema = new Schema({
   area: { type: Number },
   amenities: [String],
   images: [String], // Array of image URLs
-  status: { 
-    type: String, 
-    enum: ['pending', 'approved', 'rejected', 'published', 'sold'], 
-    default: 'pending' 
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'published', 'sold'],
+    default: 'pending'
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date }

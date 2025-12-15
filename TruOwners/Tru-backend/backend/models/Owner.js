@@ -38,6 +38,16 @@ const ownerSchema = new Schema({
     required: false,
     default: "pending",
   },
+  electricityBill: {
+    type: String,
+    required: true,
+    default: "pending",
+  },
+  electricityBillImageUrl: {
+    type: String,
+    required: true,
+    default: "pending",
+  },
   properties: [{ type: Schema.Types.ObjectId, ref: "Property" }],
   verified: { type: Boolean, default: false },
 });

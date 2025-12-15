@@ -1565,6 +1565,7 @@ const PropertiesTab = () => {
                                   </Avatar>
                                 </ListItemAvatar>
 
+
                                 <ListItemText
                                   primary="ID Proof Image"
                                   secondary={
@@ -1601,6 +1602,7 @@ const PropertiesTab = () => {
                                             "_blank"
                                           )
                                         }
+                                        
                                       />
                                       <Button
                                         size="small"
@@ -1615,12 +1617,91 @@ const PropertiesTab = () => {
                                         }
                                       >
                                         View
+
                                       </Button>
                                     </Box>
                                   }
                                 />
                               </ListItem>
+                              
                             )}
+                             <ListItem>
+    <ListItemAvatar>
+      <Avatar sx={{ width: 32, height: 32 }}>
+        <Person sx={{ fontSize: 16 }} />
+      </Avatar>
+    </ListItemAvatar>
+    <ListItemText
+      primary="Electricity Bill Number"
+      secondary={
+        selectedProperty.owner.electricityBill ||
+  
+        "Not provided"
+      }
+    />
+  </ListItem>
+
+  {/* ================= Electricity Bill Image ================= */}
+  {(selectedProperty.owner.electricityBillImageUrl ||
+    selectedProperty.owner.electricity_bill_image_url) && (
+    <ListItem>
+      <ListItemAvatar>
+        <Avatar sx={{ width: 32, height: 32 }}>
+          <CameraAltIcon sx={{ fontSize: 16 }} />
+        </Avatar>
+      </ListItemAvatar>
+
+      <ListItemText
+        primary="Electricity Bill Image"
+        secondary={
+          <Box
+            mt={1}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Box
+              component="img"
+              src={
+                selectedProperty.owner.electricityBillImageUrl ||
+                selectedProperty.owner.electricity_bill_image_url
+              }
+              alt="Electricity Bill"
+              sx={{
+                width: 120,
+                height: "auto",
+                borderRadius: 1,
+                boxShadow: 1,
+                cursor: "pointer",
+              }}
+              onClick={() =>
+                window.open(
+                  selectedProperty.owner.electricityBillImageUrl ||
+                  selectedProperty.owner.electricity_bill_image_url,
+                  "_blank"
+                )
+              }
+            />
+
+            <Button
+              size="small"
+              onClick={() =>
+                window.open(
+                  selectedProperty.owner.electricityBillImageUrl ||
+                  selectedProperty.owner.electricity_bill_image_url,
+                  "_blank"
+                )
+              }
+            >
+              View
+            </Button>
+          </Box>
+        }
+      />
+    </ListItem>
+  )}
                         </List>
                       </Stack>
                     ) : (

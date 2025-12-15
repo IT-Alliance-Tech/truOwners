@@ -1,0 +1,155 @@
+.contact-page {
+  font-family: "Poppins", sans-serif;
+ /* margin-top:550px; */
+}
+
+/* 1. Hero Section */
+.hero-contact {
+ position: relative;
+ background-image: url('/src/assets/images/homebanner.jpg');
+ background-size: cover;
+ background-position: center;
+ background-repeat: no-repeat;
+ color: white;
+ padding: 100px 20px;
+ text-align: center;
+ z-index: 1;
+}
+
+.hero-contact::before {
+ content: '';
+ position: absolute;
+ inset: 0;
+ background: rgba(0, 0, 0, 0.7); /* semi-transparent dark layer */
+ z-index: -1;
+}
+
+
+.hero-contact h1 {
+ font-size: 3rem;
+ margin-bottom: 10px;
+}
+
+/* 2. Two-column section */
+.contact-main {
+ display: flex;
+ flex-wrap: wrap;
+ justify-content: space-between;
+ padding: 40px 10%;
+ gap: 40px;
+ padding-bottom:100px;
+}
+
+.contact-form {
+ flex: 1;
+ min-width: 280px;
+}
+
+.contact-form form {
+ display: flex;
+ flex-direction: column;
+ gap: 15px;
+}
+
+.contact-form input,
+.contact-form textarea {
+ padding: 12px;
+ border: 1px solid #ccc;
+ border-radius: 8px;
+ background-color: white;
+ color: black;
+}
+
+.contact-form button {
+ background-color: #D0021B;
+ color: white;
+ border: none;
+ padding: 12px;
+ border-radius: 8px;
+ cursor: pointer;
+}
+
+.contact-info {
+ flex: 1;
+ min-width: 280px;
+}
+
+.contact-info ul {
+ list-style: none;
+ padding: 0;
+}
+
+.contact-info li {
+ display: flex;
+ align-items: flex-start;
+ gap: 15px;
+ margin-bottom: 25px;
+}
+
+.contact-info .icon {
+ font-size: 24px;
+ color: #D0021B;
+}
+
+/* 3. Why Brokerage Broken Section */
+.why-broken {
+ padding: 60px 10%;
+ background-color: #f9f9f9;
+ text-align: center;
+}
+
+.why-broken h2 {
+ font-size: 2.5rem;
+ margin-bottom: 40px;
+ color: #1e1e1e;
+}
+
+.why-broken .broken {
+ color: red;
+}
+
+.reasons {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+ gap: 30px;
+}
+
+.reason-card {
+ background: white;
+ padding: 20px;
+ border-radius: 12px;
+ box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.reason-card .emoji {
+ font-size: 40px;
+ margin-bottom: 10px;
+}
+
+.reason-card h4 {
+ margin-bottom: 10px;
+}
+
+.reason-card p,
+.reason-card ul {
+ color: #555;
+ font-size: 0.95rem;
+ text-align: left;
+}
+
+.reason-card ul {
+ padding-left: 20px;
+}
+
+.head1{
+ font-size: 30px;
+ margin-bottom: 30px;
+ margin-top: 50px;
+ color:#2F80ED;
+}
+
+@media(max-width:768px){
+ /* .contact-page {
+   padding-top:400px !important;
+ } */
+}

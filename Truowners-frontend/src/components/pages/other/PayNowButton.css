@@ -1,0 +1,172 @@
+/* Container */
+.paynow-container {
+  display: inline-block;
+  margin-top: 15px;
+}
+
+/* Main Pay Now button */
+.paynow-main-button {
+  padding: 12px 30px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+}
+
+.paynow-main-button:hover {
+  background: #006ae6;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+}
+
+/* Modal overlay */
+.paynow-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 10, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Modal content */
+.paynow-modal-content {
+  background: #ffffff;
+  padding: 35px 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.paynow-modal-content h3 {
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Payment methods */
+.paynow-methods-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 25px;
+}
+
+.paynow-method-radio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.paynow-method-radio:hover {
+  background: #eef6ff;
+  border-color: #007bff;
+}
+
+.paynow-method-radio input[type="radio"] {
+  accent-color: #007bff;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.paynow-method-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #333;
+  font-weight: 500;
+}
+
+.paynow-method-radio input[type="radio"]:checked + .paynow-method-info span {
+  color: #007bff;
+  font-weight: 600;
+}
+
+/* 💵 Divider Text (Or pay via Cash) */
+.paynow-cash-text {
+  margin: 12px 0 22px 0;
+  text-align: center;
+  color: #333;
+  font-size: 0.95rem;
+  position: relative;
+}
+
+.paynow-cash-text::before {
+  content: "";
+  display: block;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #dcdcdc, transparent);
+  width: 85%;
+  margin: 15px auto;
+  border-radius: 2px;
+}
+
+.paynow-cash-text svg {
+  vertical-align: middle;
+  margin-right: 6px;
+  color: #28a745;
+  transform: translateY(-1px);
+}
+
+.paynow-cash-text strong {
+  color: #28a745;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Buttons side-by-side */
+.paynow-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+/* Close button */
+.paynow-close-button {
+  padding: 12px 30px;
+  background: #e74c3c;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.paynow-close-button:hover {
+  background: #d64032;
+  transform: translateY(-1px);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

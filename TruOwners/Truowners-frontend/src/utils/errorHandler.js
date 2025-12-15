@@ -63,6 +63,9 @@ export const handleApiError = (error, response = null) => {
     if (data.success === false && !data.error && !data.message) {
       throw new Error('API returned error without message')
     }
+    if (data.success === false && data.error) {
+    throw new Error(data.error.message);
+  }
     
     return true
   }

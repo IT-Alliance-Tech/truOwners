@@ -1,0 +1,315 @@
+/* PropertyCard.css */
+.property-card {
+  height: auto; /* ✅ dynamic height, no extra white gap */
+  min-height: 420px; /* ✅ keeps consistency between cards */
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  width: 100%;
+  max-width: 325px; /* ✅ fixed width */
+  text-align: left;
+}
+
+.property-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Media Container */
+.property-card__media-container {
+  position: relative;
+  height: 200px;
+  background-color: #f5f5f5;
+}
+
+.property-card__image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.property-card__image-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #666;
+  gap: 8px;
+}
+
+.property-card__image-placeholder span {
+  font-size: 14px;
+  color: #666;
+}
+.property-card__status-all {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: rgba(47, 128, 237, 0.9);
+  /* padding-left: 6px;
+  padding-right: 6px; */
+  padding-inline: 10px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border-radius: 8px;
+}
+
+/* Badge */
+.property-card__badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background-color: rgba(47, 128, 237, 0.9);
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  z-index: 1;
+}
+
+/* Wishlist Button */
+.property-card__wishlist-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #d32f2f;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: background-color 0.2s;
+}
+
+.property-card__wishlist-btn:hover {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+/* Content */
+.property-card__content {
+  flex-grow: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 6px;
+}
+
+.property-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Location */
+.property-card__location {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  color: #666;
+  text-align: left;
+  margin: 0;
+}
+
+.property-card__location span {
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Specifications */
+.property-card__specs {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.property-card__spec {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: fit-content;
+}
+
+.property-card__spec svg {
+  color: #2F80ED;
+}
+
+.property-card__spec span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Features */
+.property-card__features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.property-card__chip {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background-color: #fff;
+  color: #666;
+}
+
+/* Amenities */
+.property-card__amenities {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Description */
+.property-card__description {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pricing */
+.property-card__pricing {
+  margin: 2px 0; /* ✅ tightened */
+}
+
+.property-card__rent {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.property-card__price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2F80ED;
+}
+
+.property-card__period {
+  font-size: 14px;
+  color: #666;
+  margin-left: 4px;
+}
+
+.property-card__deposit {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Actions */
+.property-card__actions {
+  margin-top: auto; /* ✅ ensures button sticks at bottom */
+  padding: 8px 0; /* ✅ equal space above/below button */
+  width: 100%;
+}
+
+.property-card__action-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 0;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.property-card__action-btn.authenticated {
+  background-color: #2F80ED;
+  color: white;
+}
+
+.property-card__action-btn.authenticated:hover {
+  background-color: #1e6cc7;
+}
+
+.property-card__action-btn.unauthenticated {
+  background-color: transparent;
+  color: #2F80ED;
+  border: 2px solid #2F80ED;
+}
+
+.property-card__action-btn.unauthenticated:hover {
+  background-color: #f0f7ff;
+}
+
+.property-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.17;
+  pointer-events: none;
+  user-select: none;
+  width: 100%;
+  height: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .property-card {
+    min-height: auto;
+  }
+  .property-card__content {
+    padding: 12px;
+    gap: 8px;
+  }
+  .property-card__title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .property-card__specs {
+    grid-template-columns: 1fr 1fr;
+  }
+  .property-card__spec {
+    padding: 3px 6px;
+  }
+  .property-card__spec span {
+    font-size: 11px;
+  }
+}

@@ -30,13 +30,19 @@ const AddProperty = ({ onClose, onSuccess }) => {
     // Owner Details
     ownerPhone: '',
     idProofType: 'Aadhar',
-    idProofNumber: ''
+    idProofNumber: '',
+    electricityBill: '' 
   })
 
   const [idProofFile, setIdProofFile] = useState(null)
   const [idProofPreview, setIdProofPreview] = useState(null)
   const [uploadingIdProof, setUploadingIdProof] = useState(false)
   const idProofTypes = ["Aadhar", "Passport", "Driving License", "Voter ID"]
+
+  // Electricity Bill states
+  const [electricityBillFile, setElectricityBillFile] = useState(null)
+  const [electricityBillPreview, setElectricityBillPreview] = useState(null)
+  const [uploadingElectricityBill, setUploadingElectricityBill] = useState(false)
 
   // Media file states
   const [mediaFiles, setMediaFiles] = useState([])
@@ -114,6 +120,7 @@ const AddProperty = ({ onClose, onSuccess }) => {
         : [...prev.amenities, amenity]
     }))
   }
+
   const handleMediaChange = (e) => {
     const files = Array.from(e.target.files)
     if (files.length === 0) return
@@ -232,6 +239,47 @@ const AddProperty = ({ onClose, onSuccess }) => {
     if (fileInput) fileInput.value = ''
   }
 
+  // Handle Electricity Bill Image Change
+  const handleElectricityBillChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!allowedTypes.images.includes(file.type)) {
+      setError('Invalid Electricity Bill file type. Only images are allowed.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit for electricity bill
+      setError('Electricity Bill image too large. Max 5MB.')
+      return
+    }
+
+    new Compressor(file, {
+      quality: 0.6,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      success(compressedFile) {
+        setElectricityBillFile(compressedFile)
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          setElectricityBillPreview(event.target.result)
+        }
+        reader.readAsDataURL(compressedFile)
+        if (error) setError('')
+      },
+      error(err) {
+        console.error('Electricity Bill compression failed:', err.message)
+        setError('Electricity Bill compression failed')
+      }
+    })
+  }
+
+  const removeElectricityBill = () => {
+    setElectricityBillFile(null)
+    setElectricityBillPreview(null)
+    const fileInput = document.getElementById('electricityBillImage')
+    if (fileInput) fileInput.value = ''
+  }
 
   const removeMedia = (id) => {
     setMediaPreviews(prev => prev.filter(preview => preview.id !== id))
@@ -240,11 +288,6 @@ const AddProperty = ({ onClose, onSuccess }) => {
       return prev.filter(file => file !== preview?.file)
     })
   }
-
-
-
-
-
 
   const uploadAllMedia = async () => {
     if (mediaFiles.length === 0) return []
@@ -311,6 +354,15 @@ const AddProperty = ({ onClose, onSuccess }) => {
       setError('ID Proof Image is required')
       return false
     }
+    // Electricity Bill Validation (MANDATORY) - Changed field name
+    if (!formData.electricityBill.trim()) {
+      setError('Electricity Bill Number is required')
+      return false
+    }
+    if (!electricityBillFile && !electricityBillPreview) {
+      setError('Electricity Bill Image is required')
+      return false
+    }
     if (!formData.location.city.trim()) {
       setError('City is required')
       return false
@@ -343,14 +395,19 @@ const AddProperty = ({ onClose, onSuccess }) => {
         return false
       }
     }
-    if (!formData.bedrooms || formData.bedrooms <= 0) {
-      setError('Number of bedrooms is required')
-      return false
+    
+    // For commercial, bedrooms and bathrooms are not required
+    if (formData.listingType !== 'commercial') {
+      if (!formData.bedrooms || formData.bedrooms <= 0) {
+        setError('Number of bedrooms is required')
+        return false
+      }
+      if (!formData.bathrooms || formData.bathrooms <= 0) {
+        setError('Number of bathrooms is required')
+        return false
+      }
     }
-    if (!formData.bathrooms || formData.bathrooms <= 0) {
-      setError('Number of bathrooms is required')
-      return false
-    }
+    
     if (!formData.area || formData.area <= 0) {
       setError('Property area is required')
       return false
@@ -388,6 +445,20 @@ const AddProperty = ({ onClose, onSuccess }) => {
         }
       }
 
+      // Upload Electricity Bill
+      let electricityBillUrl = ''
+      if (electricityBillFile) {
+        setUploadingElectricityBill(true)
+        const fileName = generateFileName(electricityBillFile.name, 'electricity-bill')
+        const uploadResult = await uploadFile(electricityBillFile, fileName)
+        setUploadingElectricityBill(false)
+        if (uploadResult.success) {
+          electricityBillUrl = uploadResult.url
+        } else {
+          throw new Error(`Failed to upload Electricity Bill: ${uploadResult.error}`)
+        }
+      }
+
       const response = await fetch(buildApiUrl(API_CONFIG.OWNER.PROPERTIES), {
         method: 'POST',
         headers: {
@@ -403,8 +474,8 @@ const AddProperty = ({ onClose, onSuccess }) => {
           deposit: formData.listingType === 'rent' ? parseInt(formData.deposit) : undefined,
           price: formData.listingType !== 'rent' ? parseInt(formData.price) : undefined,
           propertyType: formData.propertyType,
-          bedrooms: parseInt(formData.bedrooms),
-          bathrooms: parseInt(formData.bathrooms),
+          bedrooms: formData.listingType !== 'commercial' ? parseInt(formData.bedrooms) : undefined,
+          bathrooms: formData.listingType !== 'commercial' ? parseInt(formData.bathrooms) : undefined,
           area: parseInt(formData.area),
           amenities: formData.amenities,
           images: mediaUrls,
@@ -412,7 +483,10 @@ const AddProperty = ({ onClose, onSuccess }) => {
           ownerPhone: formData.ownerPhone,
           ownerIdProofType: formData.idProofType,
           ownerIdProofNumber: formData.idProofNumber,
-          ownerIdProofImageUrl: idProofUrl
+          ownerIdProofImageUrl: idProofUrl,
+          // Electricity Bill Details (MANDATORY) - Changed field name to match backend
+          ownerElectricityBill: formData.electricityBill,
+          ownerElectricityBillImageUrl: electricityBillUrl
         }),
       })
 
@@ -530,6 +604,60 @@ const AddProperty = ({ onClose, onSuccess }) => {
                     <div className="media-preview-item" style={{ width: '100px', height: '100px', position: 'relative' }}>
                       <img src={idProofPreview} alt="ID Proof" className="media-preview-image" />
                       <button type="button" className="remove-media-btn" onClick={removeIdProof}>×</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Electricity Bill Section - Changed field name */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="electricityBill">Electricity Bill Number *</label>
+                  <input
+                    type="text"
+                    id="electricityBill"
+                    name="electricityBill"
+                    value={formData.electricityBill}
+                    onChange={handleInputChange}
+                    placeholder="Enter Electricity Bill Number"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="electricityBillImage">Electricity Bill Image *</label>
+
+                  {!electricityBillPreview && (
+                    <input
+                      type="file"
+                      id="electricityBillImage"
+                      accept="image/*"
+                      onChange={handleElectricityBillChange}
+                      required={!electricityBillPreview}
+                    />
+                  )}
+
+                  {electricityBillPreview && (
+                    <div
+                      className="media-preview-item"
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        position: "relative",
+                      }}
+                    >
+                      <img
+                        src={electricityBillPreview}
+                        alt="Electricity Bill"
+                        className="media-preview-image"
+                      />
+                      <button
+                        type="button"
+                        className="remove-media-btn"
+                        onClick={removeElectricityBill}
+                      >
+                        ×
+                      </button>
                     </div>
                   )}
                 </div>
@@ -681,137 +809,191 @@ const AddProperty = ({ onClose, onSuccess }) => {
           <div className="form-section">
             <h3 className="section-title">Property Details</h3>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="propertyType">Property Type *</label>
-                <select
-                  id="propertyType"
-                  name="propertyType"
-                  value={formData.propertyType}
-                  onChange={handleInputChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="apartment">Apartment</option>
-                  <option value="house">House</option>
-                  <option value="condo">Condo</option>
-                  <option value="villa">Villa</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="area">Area (sq ft) *</label>
-                <input
-                  type="number"
-                  id="area"
-                  name="area"
-                  value={formData.area}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 1200"
-                  min="1"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="bedrooms">Bedrooms *</label>
-                <input
-                  type="number"
-                  id="bedrooms"
-                  name="bedrooms"
-                  value={formData.bedrooms}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2"
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="bathrooms">Bathrooms *</label>
-                <input
-                  type="number"
-                  id="bathrooms"
-                  name="bathrooms"
-                  value={formData.bathrooms}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2"
-                  min="1"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Listing Type & Pricing */}
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="listingType">Property For *</label>
-                <select
-                  id="listingType"
-                  name="listingType"
-                  value={formData.listingType}
-                  onChange={handleInputChange}
-                  className="form-select"
-                  required
-                >
-                  <option value="rent">Rent</option>
-                  <option value="sell">Sell</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="lease">Lease</option>
-                </select>
-              </div>
-
-              {formData.listingType === 'rent' ? (
-                <>
+            {/* For Commercial: Show only listingType, area, and price */}
+            {formData.listingType === 'commercial' ? (
+              <>
+                <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="rent">Monthly Rent (₹) *</label>
+                    <label htmlFor="listingType">Property For *</label>
+                    <select
+                      id="listingType"
+                      name="listingType"
+                      value={formData.listingType}
+                      onChange={handleInputChange}
+                      className="form-select"
+                      required
+                    >
+                      <option value="rent">Rent</option>
+                      <option value="sell">Sell</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="lease">Lease</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="area">Area (sq ft) *</label>
                     <input
                       type="number"
-                      id="rent"
-                      name="rent"
-                      value={formData.rent}
+                      id="area"
+                      name="area"
+                      value={formData.area}
                       onChange={handleInputChange}
-                      placeholder="e.g., 25000"
+                      placeholder="e.g., 1200"
                       min="1"
                       required
                     />
                   </div>
+
                   <div className="form-group">
-                    <label htmlFor="deposit">Security Deposit (₹) *</label>
+                    <label htmlFor="price">Commercial Price (₹) *</label>
                     <input
                       type="number"
-                      id="deposit"
-                      name="deposit"
-                      value={formData.deposit}
+                      id="price"
+                      name="price"
+                      value={formData.price}
                       onChange={handleInputChange}
-                      placeholder="e.g., 50000"
+                      placeholder="e.g., 5000000"
                       min="1"
                       required
                     />
                   </div>
-                </>
-              ) : (
-                <div className="form-group">
-                  <label htmlFor="price">
-                    {formData.listingType === 'sell' ? 'Sale Price' :
-                      formData.listingType === 'lease' ? 'Lease Amount' :
-                        'Commercial Price'} (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 5000000"
-                    min="1"
-                    required
-                  />
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                {/* For Non-Commercial: Show all fields */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="propertyType">Property Type *</label>
+                    <select
+                      id="propertyType"
+                      name="propertyType"
+                      value={formData.propertyType}
+                      onChange={handleInputChange}
+                      className="form-select"
+                      required
+                    >
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
+                      <option value="villa">Villa</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="area">Area (sq ft) *</label>
+                    <input
+                      type="number"
+                      id="area"
+                      name="area"
+                      value={formData.area}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 1200"
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="bedrooms">Bedrooms *</label>
+                    <input
+                      type="number"
+                      id="bedrooms"
+                      name="bedrooms"
+                      value={formData.bedrooms}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 2"
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="bathrooms">Bathrooms *</label>
+                    <input
+                      type="number"
+                      id="bathrooms"
+                      name="bathrooms"
+                      value={formData.bathrooms}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 2"
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Listing Type & Pricing */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="listingType">Property For *</label>
+                    <select
+                      id="listingType"
+                      name="listingType"
+                      value={formData.listingType}
+                      onChange={handleInputChange}
+                      className="form-select"
+                      required
+                    >
+                      <option value="rent">Rent</option>
+                      <option value="sell">Sell</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="lease">Lease</option>
+                    </select>
+                  </div>
+
+                  {formData.listingType === 'rent' ? (
+                    <>
+                      <div className="form-group">
+                        <label htmlFor="rent">Monthly Rent (₹) *</label>
+                        <input
+                          type="number"
+                          id="rent"
+                          name="rent"
+                          value={formData.rent}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 25000"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="deposit">Security Deposit (₹) *</label>
+                        <input
+                          type="number"
+                          id="deposit"
+                          name="deposit"
+                          value={formData.deposit}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 50000"
+                          min="1"
+                          required
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="form-group">
+                      <label htmlFor="price">
+                        {formData.listingType === 'sell' ? 'Sale Price' :
+                          formData.listingType === 'lease' ? 'Lease Amount' :
+                            'Commercial Price'} (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="e.g., 5000000"
+                        min="1"
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Amenities */}
@@ -918,12 +1100,12 @@ const AddProperty = ({ onClose, onSuccess }) => {
           <button
             type="submit"
             className="btn btn-primary btn-full"
-            disabled={loading || uploadingMedia || uploadingIdProof || mediaFiles.length === 0}
+            disabled={loading || uploadingMedia || uploadingIdProof || uploadingElectricityBill || mediaFiles.length === 0}
           >
-            {uploadingMedia || uploadingIdProof ? (
+            {uploadingMedia || uploadingIdProof || uploadingElectricityBill ? (
               <>
                 <span className="loading-spinner"></span>
-                Uploading Media/ID...
+                Uploading Files...
               </>
             ) : loading ? (
               <>

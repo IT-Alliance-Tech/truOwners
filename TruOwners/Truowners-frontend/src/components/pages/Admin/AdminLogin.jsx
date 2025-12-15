@@ -64,9 +64,14 @@ const AdminLogin = ({ onClose }) => {
 
       let data
       try {
+        
         data = await response.json()
+        console.log('API Response Data:', data)
         validateApiResponse(data)
       } catch (parseError) {
+        if (data.success === false && data.error) {
+    throw new Error(data.error.message);
+  }
         throw new Error('Invalid server response')
       }
 
