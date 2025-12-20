@@ -378,9 +378,16 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
             fullWidth
             variant="contained"
             color="primary"
-            onClick={() =>
-              navigate(`/properties?${new URLSearchParams(filters).toString()}`)
-            }
+            onClick={() => {
+              const urlParams = new URLSearchParams();
+              if (filters.status) urlParams.append("status", filters.status);
+              if (filters.propertyType) urlParams.append("propertyType", filters.propertyType);
+              if (filters.city) urlParams.append("city", filters.city);
+              if (filters.bedrooms) urlParams.append("bedrooms", filters.bedrooms);
+              if (filters.searchTerm) urlParams.append("search", filters.searchTerm);
+              if (filters.maxBudget) urlParams.append("maxBudget", filters.maxBudget);
+              navigate(`/properties?${urlParams.toString()}`);
+            }}
             sx={{
               mt: 3,
               fontWeight: 600,

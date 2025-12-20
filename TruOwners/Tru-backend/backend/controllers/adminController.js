@@ -1233,7 +1233,7 @@ const getAllPayments = async (req, res) => {
       .json({ success: false, error: { message: "Internal server error" } });
   }
 };
-
+// get commit
 // Get user complete history
 const getUserHistory = async (req, res) => {
   const { userId } = req.params;
