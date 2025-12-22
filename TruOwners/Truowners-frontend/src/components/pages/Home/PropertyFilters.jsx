@@ -55,7 +55,8 @@ const PropertyFilters = ({
   filters,
   onFiltersChange,
   totalProperties,
-  properties = []
+  properties = [],
+   isSubscribed = false, 
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 100000]);

@@ -287,8 +287,6 @@ const PropertyCard = ({
             alignItems: "center",
           }}
         >
-
-          {/* ---------- UPDATED CONDITIONAL LOGIC ---------- */}
           {property?.rent || property?.price ? (
             <span className="property-card__price">
               {formatCurrency(property.rent || property.price)}
@@ -302,20 +300,21 @@ const PropertyCard = ({
               </span>
             )
             : null}
-          {/* ---------- END UPDATE ---------- */}
-
         </div>
 
         <h3 title={property?.title} className="property-card__title">
           {capitalizeText(property?.title) || "Untitled Property"}
         </h3>
 
-        <div
-          className="property-card__location"
-          title={getLocationString(property?.location)}
-        >
-          <span>{getLocationString(property?.location)}</span>
-        </div>
+        {/* Only show location if user is authenticated */}
+        {isAuthenticated && (
+          <div
+            className="property-card__location"
+            title={getLocationString(property?.location)}
+          >
+            <span>{getLocationString(property?.location)}</span>
+          </div>
+        )}
 
         <div className="property-card__specs">
           <div className="property-card__spec">
