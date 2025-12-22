@@ -21,8 +21,7 @@ const propertyTypes = [
   { label: "Apartment", value: "apartment" },
   { label: "House", value: "house" },
   { label: "Villa", value: "villa" },
-  { label: "Studio", value: "studio" },
-  { label: "Commercial", value: "commercial" },
+
 ];
 
 const bedroomOptions = [

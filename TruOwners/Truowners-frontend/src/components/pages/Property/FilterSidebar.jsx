@@ -244,22 +244,22 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
   };
 
   // suggested min/max based on selected status tab
-const getSuggestedRange = (tab) => {
-  switch (tab) {
-    case 1: // Rent
-      return [5000, 500000]; // 5K – 5 Lakh
-    case 2: // Sale
-      return [1000000, 30000000]; // ✅ 10 Lakh – 3 Crore
-    case 3: // Lease
-      return [500000, 2000000]; // ✅ 5 Lakh – 20 Lakh
-    case 4: // Commercial
-      return [5000, 5000000]; // 5K – 50 Lakh
-    default: // All or unselected
-      return [5000, 30000000];
-  }
-};
+  const getSuggestedRange = (tab) => {
+    switch (tab) {
+      case 1: // Rent
+        return [5000, 500000]; // 5K – 5 Lakh
+      case 2: // Sale
+        return [1000000, 30000000]; // ✅ 10 Lakh – 3 Crore
+      case 3: // Lease
+        return [500000, 2000000]; // ✅ 5 Lakh – 20 Lakh
+      case 4: // Commercial
+        return [5000, 5000000]; // 5K – 50 Lakh
+      default: // All or unselected
+        return [5000, 30000000];
+    }
+  };
 
-             const [statusTab, setStatusTab] = useState(0);
+  const [statusTab, setStatusTab] = useState(0);
   const [showMoreFilters, setShowMoreFilters] = useState();
   const [filters, setFilters] = useState(() => ({
     ...defaultFilters,
@@ -268,30 +268,30 @@ const getSuggestedRange = (tab) => {
   // Custom range slider state (₹5K → ₹3Cr)
   const [customRange, setCustomRange] = useState([5000, 30000000]);
 
-useEffect(() => {
-  const [min, max] = getSuggestedRange(statusTab);
-  setCustomRange([min, max]);
+  useEffect(() => {
+    const [min, max] = getSuggestedRange(statusTab);
+    setCustomRange([min, max]);
 
-  setFilters((prev) => ({
-    ...prev,
-    rentRange: [min, max],
-    budgetRange: [min, max],
-    rentMin: String(min),
-    rentMax: String(max),
-    budgetMin: String(min),
-    budgetMax: String(max),
-    minPrice: String(min),
-    maxPrice: String(max),
-  }));
-}, [statusTab]);
-// ✅ Keep filters.minPrice and filters.maxPrice in sync with customRange (for Sale & Lease)
-useEffect(() => {
-  setFilters((prev) => ({
-    ...prev,
-    minPrice: customRange[0],
-    maxPrice: customRange[1],
-  }));
-}, [customRange]);
+    setFilters((prev) => ({
+      ...prev,
+      rentRange: [min, max],
+      budgetRange: [min, max],
+      rentMin: String(min),
+      rentMax: String(max),
+      budgetMin: String(min),
+      budgetMax: String(max),
+      minPrice: String(min),
+      maxPrice: String(max),
+    }));
+  }, [statusTab]);
+  // ✅ Keep filters.minPrice and filters.maxPrice in sync with customRange (for Sale & Lease)
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      minPrice: customRange[0],
+      maxPrice: customRange[1],
+    }));
+  }, [customRange]);
 
 
 
@@ -378,59 +378,46 @@ useEffect(() => {
     });
   };
 
-const handleSearchClick = () => {
-  const params = new URLSearchParams();
+  const handleSearchClick = () => {
+    const params = new URLSearchParams();
 
-  // Determine status based on selected tab
-  const statusValue =
-    statusTab === 0 ? "All" :
-    statusTab === 1 ? "Rent" :
-    statusTab === 2 ? "Sale" :
-    statusTab === 3 ? "Lease" :
-    "Commercial";
+    // Determine status based on selected tab
+    const statusValue =
+      statusTab === 0 ? "All" :
+        statusTab === 1 ? "Rent" :
+          statusTab === 2 ? "Sale" :
+            statusTab === 3 ? "Lease" :
+              "Commercial";
 
-  params.append("status", statusValue);
+    params.append("status", statusValue);
 
-  // Common filters
-  if (filters.propertyType) params.append("propertyType", filters.propertyType);
-  if (filters.city) params.append("city", filters.city);
-  if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
-  if (filters.search) params.append("search", filters.search);
-  if (filters.title) params.append("title", filters.title);
-  if (filters.amenities && filters.amenities.length > 0)
-    params.append("amenities", filters.amenities.join(","));
+    // Common filters
+    if (filters.propertyType) params.append("propertyType", filters.propertyType);
+    if (filters.city) params.append("city", filters.city);
+    if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.title) params.append("title", filters.title);
+    if (filters.amenities && filters.amenities.length > 0)
+      params.append("amenities", filters.amenities.join(","));
 
-  // ✅ Use correct min/max depending on tab
-  let minRange, maxRange;
+    // Unified budget/rent handling
+    if (statusTab === 1 || statusTab === 4 || statusTab === 0) {
+      if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
+      if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+    }
 
-  // use numeric values (prefer filters for Sale & Lease)
-if (statusTab === 2 || statusTab === 3) { 
-  // prefer explicit numeric filters.minPrice/maxPrice, fallback to customRange
-  minRange = (filters.minPrice !== undefined && filters.minPrice !== "") 
-    ? Number(filters.minPrice) 
-    : Number(customRange[0]);
-  maxRange = (filters.maxPrice !== undefined && filters.maxPrice !== "") 
-    ? Number(filters.maxPrice) 
-    : Number(customRange[1]);
-} else {
-  // Rent / Commercial / All -> rely on customRange (existing working behavior)
-  minRange = Number(customRange[0]);
-  maxRange = Number(customRange[1]);
-}
+    if (statusTab === 2 || statusTab === 3 || statusTab === 0) {
+      if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
+      if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+    }
 
+    lastSearchRef.current = filters.search;
 
-  params.append("minPrice", minRange);
-  params.append("maxPrice", maxRange);
-
-  lastSearchRef.current = filters.search;
-
-  onSearch(params.toString(), {
-    ...filters,
-    status: statusValue,
-    minRange,
-    maxRange,
-  });
-};
+    onSearch(params.toString(), {
+      ...filters,
+      status: statusValue,
+    });
+  };
 
   const handleClearFilters = () => {
     setFilters(defaultFilters);
@@ -446,14 +433,14 @@ if (statusTab === 2 || statusTab === 3) {
         ? prev.amenities
         : [];
 
-        console.log(currentAmenities, "filters");
+      console.log(currentAmenities, "filters");
 
       let updatedAmenities = checked
         ? [...currentAmenities, name]
         : currentAmenities.filter((item) => item !== name);
 
-        console.log(updatedAmenities, "filters");
-        
+      console.log(updatedAmenities, "filters");
+
 
       return {
         ...prev,
@@ -463,7 +450,7 @@ if (statusTab === 2 || statusTab === 3) {
   };
 
   console.log(filters, "filters");
-  
+
 
   return (
     <div>
@@ -515,17 +502,17 @@ if (statusTab === 2 || statusTab === 3) {
       </Box>
 
       {/* Tabs */}
-      <Box 
-       sx={{
-        '& .MuiTabs-flexContainer': {
-          justifyContent: 'center',
-          display: "grid", // change justify to center (or 'flex-start', 'flex-end', etc.)
-        },
-        mb: 4, textAlign: "center", display: "grid"
-      }}>
+      <Box
+        sx={{
+          '& .MuiTabs-flexContainer': {
+            justifyContent: 'center',
+            display: "grid", // change justify to center (or 'flex-start', 'flex-end', etc.)
+          },
+          mb: 4, textAlign: "center", display: "grid"
+        }}>
         <StyledTabs
-        
-         value={statusTab} onChange={handleTabChange} centered >
+
+          value={statusTab} onChange={handleTabChange} centered >
           <StyledTab label="ALL STATUS" />
           <StyledTab label="FOR RENT" />
           <StyledTab label="FOR SALE" />
@@ -536,7 +523,7 @@ if (statusTab === 2 || statusTab === 3) {
       </Box>
 
       {/* First Row - Basic Filters */}
-      
+
       <Grid item xs={12} sm={6} md={3} sx={{ mb: 2 }}>
         <SectionLabel>
           <HomeIcon sx={{ fontSize: 16 }} />
@@ -551,13 +538,13 @@ if (statusTab === 2 || statusTab === 3) {
             displayEmpty: true,
             renderValue: (value) => (value) || <span style={{ color: "#9e9e9e" }}>PROPERTY TYPE</span>,
             MenuProps: {
-  disableScrollLock: true,
-  PaperProps: {
-    sx: {
-      zIndex: 3000,   // higher than drawer (2500)
-    },
-  },
-},
+              disableScrollLock: true,
+              PaperProps: {
+                sx: {
+                  zIndex: 3000,   // higher than drawer (2500)
+                },
+              },
+            },
 
           }}
         >
@@ -627,144 +614,144 @@ if (statusTab === 2 || statusTab === 3) {
         </Button>
       </Grid>
 
-{showMoreFilters === true ? (
-  <>
-    {/* --- Universal Price Range (Works for Rent, Sale, Lease, Commercial) --- */}
-    <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
-      <SectionLabel>
-        PRICE RANGE ₹{formatCurrencyShort(customRange[0])} – ₹{formatCurrencyShort(customRange[1])}
-      </SectionLabel>
-
-      <SliderContainer>
-        <Box sx={{ mb: 2 }}>
-          <Slider
-            value={customRange || [0, 0]}
-            onChange={(e, newValue) => {
-              // Update visual range
-              setCustomRange(newValue);
-
-              // ✅ Keep filters in sync immediately for SALE (2) and LEASE (3)
-              if (statusTab === 2 || statusTab === 3) {
-                setFilters((prev) => ({
-                  ...prev,
-                  minPrice: Number(newValue[0]),
-                  maxPrice: Number(newValue[1]),
-                  budgetRange: [Number(newValue[0]), Number(newValue[1])],
-                }));
-              }
-            }}
-            onChangeCommitted={(e, newValue) => {
-              // ✅ Finalize update when user releases slider
-              setFilters((prev) => ({
-                ...prev,
-                minPrice: Number(newValue[0]),
-                maxPrice: Number(newValue[1]),
-                budgetRange: [Number(newValue[0]), Number(newValue[1])],
-              }));
-            }}
-            valueLabelDisplay="off"
-            min={5000}
-            max={30000000}
-            step={5000}
-            sx={{
-              color: "#1976d2",
-              "& .MuiSlider-thumb": {
-                width: 20,
-                height: 20,
-              },
-            }}
-          />
-        </Box>
-      </SliderContainer>
-    </Grid>
- 
-
-    {/* --- RENT RANGE Section (unchanged, used for rent-specific filters) --- */}
-    <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
-      {(statusTab === 1 || statusTab === 4) && (
+      {showMoreFilters === true ? (
         <>
-          <SectionLabel>RENT RANGE</SectionLabel>
-          <SliderContainer>
-            <Box sx={{ mb: 2 }}>
-              <Slider
-                value={filters.rentRange}
-                onChange={(e, value) => handleSliderChange("rentRange", value)}
-                valueLabelDisplay="auto"
-                min={0}
-                max={50000}
-                step={500}
-                valueLabelFormat={(value) => `₹${value.toLocaleString()}`}
-                sx={{
-                  color: "#1976d2",
-                  "& .MuiSlider-thumb": {
-                    width: 20,
-                    height: 20,
-                  },
-                }}
-              />
-            </Box>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <PriceInput
-                  fullWidth
-                  size="small"
-                  label="Min Rent"
-                  value={filters.rentMin}
-                  onChange={(e) =>
-                    handleMinMaxChange("rent", "min", e.target.value)
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">₹</InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <PriceInput
-                  fullWidth
-                  size="small"
-                  label="Max Rent"
-                  value={filters.rentMax}
-                  onChange={(e) =>
-                    handleMinMaxChange("rent", "max", e.target.value)
-                  }
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">₹</InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </SliderContainer>
-        </>
-      )}
+          {/* --- Universal Price Range (Works for Rent, Sale, Lease, Commercial) --- */}
+          <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
+            <SectionLabel>
+              PRICE RANGE ₹{formatCurrencyShort(customRange[0])} – ₹{formatCurrencyShort(customRange[1])}
+            </SectionLabel>
 
-      {/* --- AMENITIES Section (unchanged) --- */}
-      <Grid>
-        <SectionLabel>Amenities</SectionLabel>
-        <FormGroup>
-          {amenitiesList.map((amenity) => (
-            <FormControlLabel
-              key={amenity}
-              control={
-                <Checkbox
-                  checked={filters.amenities.includes(amenity)}
-                  onChange={handleChangeAmenities}
-                  name={amenity}
+            <SliderContainer>
+              <Box sx={{ mb: 2 }}>
+                <Slider
+                  value={customRange || [0, 0]}
+                  onChange={(e, newValue) => {
+                    // Update visual range
+                    setCustomRange(newValue);
+
+                    // ✅ Keep filters in sync immediately for SALE (2) and LEASE (3)
+                    if (statusTab === 2 || statusTab === 3) {
+                      setFilters((prev) => ({
+                        ...prev,
+                        minPrice: Number(newValue[0]),
+                        maxPrice: Number(newValue[1]),
+                        budgetRange: [Number(newValue[0]), Number(newValue[1])],
+                      }));
+                    }
+                  }}
+                  onChangeCommitted={(e, newValue) => {
+                    // ✅ Finalize update when user releases slider
+                    setFilters((prev) => ({
+                      ...prev,
+                      minPrice: Number(newValue[0]),
+                      maxPrice: Number(newValue[1]),
+                      budgetRange: [Number(newValue[0]), Number(newValue[1])],
+                    }));
+                  }}
+                  valueLabelDisplay="off"
+                  min={5000}
+                  max={30000000}
+                  step={5000}
+                  sx={{
+                    color: "#1976d2",
+                    "& .MuiSlider-thumb": {
+                      width: 20,
+                      height: 20,
+                    },
+                  }}
                 />
-              }
-              label={amenity}
-            />
-          ))}
-        </FormGroup>
-      </Grid>
-    </Grid>
-  </>
-) : (
-  <></>
-)}
+              </Box>
+            </SliderContainer>
+          </Grid>
+
+
+          {/* --- RENT RANGE Section (unchanged, used for rent-specific filters) --- */}
+          <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
+            {(statusTab === 1 || statusTab === 4) && (
+              <>
+                <SectionLabel>RENT RANGE</SectionLabel>
+                <SliderContainer>
+                  <Box sx={{ mb: 2 }}>
+                    <Slider
+                      value={filters.rentRange}
+                      onChange={(e, value) => handleSliderChange("rentRange", value)}
+                      valueLabelDisplay="auto"
+                      min={0}
+                      max={50000}
+                      step={500}
+                      valueLabelFormat={(value) => `₹${value.toLocaleString()}`}
+                      sx={{
+                        color: "#1976d2",
+                        "& .MuiSlider-thumb": {
+                          width: 20,
+                          height: 20,
+                        },
+                      }}
+                    />
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <PriceInput
+                        fullWidth
+                        size="small"
+                        label="Min Rent"
+                        value={filters.rentMin}
+                        onChange={(e) =>
+                          handleMinMaxChange("rent", "min", e.target.value)
+                        }
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">₹</InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <PriceInput
+                        fullWidth
+                        size="small"
+                        label="Max Rent"
+                        value={filters.rentMax}
+                        onChange={(e) =>
+                          handleMinMaxChange("rent", "max", e.target.value)
+                        }
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">₹</InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </SliderContainer>
+              </>
+            )}
+
+            {/* --- AMENITIES Section (unchanged) --- */}
+            <Grid>
+              <SectionLabel>Amenities</SectionLabel>
+              <FormGroup>
+                {amenitiesList.map((amenity) => (
+                  <FormControlLabel
+                    key={amenity}
+                    control={
+                      <Checkbox
+                        checked={filters.amenities.includes(amenity)}
+                        onChange={handleChangeAmenities}
+                        name={amenity}
+                      />
+                    }
+                    label={amenity}
+                  />
+                ))}
+              </FormGroup>
+            </Grid>
+          </Grid>
+        </>
+      ) : (
+        <></>
+      )}
 
 
 

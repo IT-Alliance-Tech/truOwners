@@ -1,4 +1,4 @@
-// PropertyFilters.jsx - Updated with amenities and area on separate line
+// PropertyFilters.jsx - Updated with subscription-based location visibility
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -56,7 +56,7 @@ const PropertyFilters = ({
   onFiltersChange,
   totalProperties,
   properties = [],
-   isSubscribed = false, 
+  isSubscribed = false, 
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 100000]);
@@ -226,48 +226,54 @@ const PropertyFilters = ({
         <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2 }}>
           {/* First Advanced Filter Row */}
           <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-            {/* Location/Address */}
-            <Grid item xs={12} md={2}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Location/Address"
-                value={filters.location || ''}
-                onChange={(e) => handleFilterChange('location', e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LocationIcon color="action" sx={{ fontSize: 18 }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
-              />
-            </Grid>
+            {/* Location/Address - Only show if subscribed */}
+            {isSubscribed && (
+              <Grid item xs={12} md={2}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Location/Address"
+                  value={filters.location || ''}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationIcon color="action" sx={{ fontSize: 18 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                />
+              </Grid>
+            )}
 
-            {/* City */}
-            <Grid item xs={6} md={1.5}>
-              <TextField
-                fullWidth
-                size="small"
-                label="City"
-                value={filters.city || ''}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
-              />
-            </Grid>
+            {/* City - Only show if subscribed */}
+            {isSubscribed && (
+              <Grid item xs={6} md={1.5}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="City"
+                  value={filters.city || ''}
+                  onChange={(e) => handleFilterChange('city', e.target.value)}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                />
+              </Grid>
+            )}
 
-            {/* State */}
-            <Grid item xs={6} md={1.5}>
-              <TextField
-                fullWidth
-                size="small"
-                label="State"
-                value={filters.state || ''}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-                sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
-              />
-            </Grid>
+            {/* State - Only show if subscribed */}
+            {isSubscribed && (
+              <Grid item xs={6} md={1.5}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="State"
+                  value={filters.state || ''}
+                  onChange={(e) => handleFilterChange('state', e.target.value)}
+                  sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
+                />
+              </Grid>
+            )}
 
             {/* Rent Range */}
             <Grid item xs={12} md={3}>
@@ -290,15 +296,15 @@ const PropertyFilters = ({
             {/* Bedrooms */}
             <Grid item xs={6} md={3}>
               <FormControl fullWidth size="small" sx={{
-    minWidth: 150,                     // widen the field
-    '& .MuiInputLabel-root': {
-      overflow: 'visible',             // let the whole word show
-      whiteSpace: 'nowrap',
-    },
-    '& .MuiInputLabel-shrink': {       // floated (shrunk) state
-      transform: 'translate(14px,-6px) scale(0.75)',
-    },
-  }}>
+                minWidth: 150,
+                '& .MuiInputLabel-root': {
+                  overflow: 'visible',
+                  whiteSpace: 'nowrap',
+                },
+                '& .MuiInputLabel-shrink': {
+                  transform: 'translate(14px,-6px) scale(0.75)',
+                },
+              }}>
                 <InputLabel>Bedrooms</InputLabel>
                 <Select
                   value={filters.bedrooms || 'any'}
@@ -319,15 +325,15 @@ const PropertyFilters = ({
             {/* Bathrooms */}
             <Grid item xs={6} md={3}>
               <FormControl fullWidth size="small" sx={{
-    minWidth: 150,                     // widen the field
-    '& .MuiInputLabel-root': {
-      overflow: 'visible',             // let the whole word show
-      whiteSpace: 'nowrap',
-    },
-    '& .MuiInputLabel-shrink': {       // floated (shrunk) state
-      transform: 'translate(14px,-6px) scale(0.75)',
-    },
-  }}>
+                minWidth: 150,
+                '& .MuiInputLabel-root': {
+                  overflow: 'visible',
+                  whiteSpace: 'nowrap',
+                },
+                '& .MuiInputLabel-shrink': {
+                  transform: 'translate(14px,-6px) scale(0.75)',
+                },
+              }}>
                 <InputLabel>Bathrooms</InputLabel>
                 <Select
                   value={filters.bathrooms || 'any'}
@@ -369,17 +375,13 @@ const PropertyFilters = ({
                 sx={{ '& .MuiOutlinedInput-root': { height: '40px' } }}
               />
             </Grid>
-
-
           </Grid>
 
-
-          {/* Second Advanced Filter Row - Area and Amenities */}
+          {/* Second Advanced Filter Row - Amenities */}
           <Grid container spacing={2} alignItems="center">
-
             {/* Amenities */}
             <Grid item xs={12} md={30}>
-            <Autocomplete
+              <Autocomplete
                 multiple
                 size="small"
                 options={availableAmenities}

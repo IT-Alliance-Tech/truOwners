@@ -43,22 +43,30 @@ const PropertiesPage = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => parseInt(searchParams.get("page")) || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProperties, setTotalProperties] = useState(0);
 
-  // Filter state
-  const [filters, setFilters] = useState({
-    propertyType: "",
-    city: "",
-    bedrooms: "",
-    searchTerm: "",
-    amenities: [],
-    title: "",
-    rentRange: [0, 50000],
-    depositRange: [0, 100000],
-    status: ""
-  });
+  // Filter state - initialized from URL params to avoid initial unfiltered fetch
+  const [filters, setFilters] = useState(() => ({
+    propertyType: searchParams.get("propertyType") || "",
+    city: searchParams.get("city") || "",
+    bedrooms: searchParams.get("bedrooms") || "",
+    searchTerm: searchParams.get("search") || "",
+    amenities: searchParams.get("amenities")
+      ? searchParams.get("amenities").split(",").map((a) => a.trim())
+      : [],
+    title: searchParams.get("title") || "",
+    rentRange: [
+      parseInt(searchParams.get("minRent")) || 0,
+      parseInt(searchParams.get("maxRent")) || 500000,
+    ],
+    budgetRange: [
+      parseInt(searchParams.get("minBudget")) || 0,
+      parseInt(searchParams.get("maxBudget")) || 30000000,
+    ],
+    status: searchParams.get("status") || "All"
+  }));
 
   // Modal states
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -71,10 +79,9 @@ const PropertiesPage = () => {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
 
-  // Initialize filters from URL parameters on component mount
-
+  // Initialize filters from URL parameters ONLY when searchParams change
   useEffect(() => {
-    const initialFilters = {
+    const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
       city: searchParams.get("city") || "",
       bedrooms: searchParams.get("bedrooms") || "",
@@ -85,22 +92,24 @@ const PropertiesPage = () => {
       title: searchParams.get("title") || "",
       rentRange: [
         parseInt(searchParams.get("minRent")) || 0,
-        parseInt(searchParams.get("maxRent")) || 50000,
+        parseInt(searchParams.get("maxRent")) || 500000,
       ],
-      depositRange: [
+      budgetRange: [
         parseInt(searchParams.get("minBudget")) || 0,
-        parseInt(searchParams.get("maxBudget")) || 100000,
+        parseInt(searchParams.get("maxBudget")) || 30000000,
       ],
       status: searchParams.get("status") || "All"
     };
 
-    setFilters(initialFilters);
+    setFilters(updatedFilters);
     setPage(parseInt(searchParams.get("page")) || 1);
   }, [searchParams]);
 
   // Fetch properties whenever filters or page changes
   useEffect(() => {
-    fetchProperties();
+    const controller = new AbortController();
+    fetchProperties(controller.signal);
+    return () => controller.abort();
   }, [filters, page, isAuthenticated]);
 
   // Fetch wishlist when user is authenticated
@@ -110,7 +119,7 @@ const PropertiesPage = () => {
     }
   }, [isAuthenticated]);
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (signal) => {
     setLoading(true);
     setError("");
 
@@ -127,13 +136,16 @@ const PropertiesPage = () => {
       if (filters.city) params.append("city", filters.city);
       if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
       if (filters.searchTerm) params.append("search", filters.searchTerm);
-      if (filters.amenities) params.append("amenities", filters.amenities);
+      if (filters.amenities && filters.amenities.length > 0) params.append("amenities", filters.amenities.join(","));
       if (filters.title) params.append("title", filters.title);
+
       if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
-      if (filters.rentRange[1] < 50000) params.append("maxRent", filters.rentRange[1]);
-      if (filters.depositRange[0] > 0) params.append("minBudget", filters.depositRange[0]);
-      if (filters.depositRange[1] < 100000) params.append("maxBudget", filters.depositRange[1]);
-      if (filters.status) params.append("status", filters.status);
+      if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+
+      if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
+      if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+
+      if (filters.status && filters.status !== "All") params.append("status", filters.status);
 
       // Add pagination
       params.append("page", page.toString());
@@ -141,7 +153,7 @@ const PropertiesPage = () => {
 
       const response = await fetch(
         `${buildApiUrl(API_CONFIG.USER.PROPERTIES)}?${params.toString()}`,
-        { method: "GET", headers }
+        { method: "GET", headers, signal }
       );
 
       let data;
@@ -149,6 +161,7 @@ const PropertiesPage = () => {
         data = await response.json();
         validateApiResponse(data);
       } catch (parseError) {
+        if (signal?.aborted) return;
         throw new Error("Invalid response from server");
       }
 
@@ -165,6 +178,7 @@ const PropertiesPage = () => {
       }
       setMobileFilterOpen(false)
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error("Fetch properties error:", err);
       setError(err.message || "Failed to load properties. Please try again.");
       setProperties([]);
@@ -276,11 +290,11 @@ const PropertiesPage = () => {
       city: updatedFilters.city || "",
       bedrooms: updatedFilters.bedrooms || "",
       searchTerm: updatedFilters.search || "",
-      rentRange: updatedFilters.rentRange || [0, 50000],
-      depositRange: updatedFilters.budgetRange || [0, 100000],
-      amenities: updatedFilters.amenities || [""],
+      rentRange: updatedFilters.rentRange || [0, 500000],
+      budgetRange: updatedFilters.budgetRange || [0, 30000000],
+      amenities: updatedFilters.amenities || [],
       title: updatedFilters.title || "",
-      status: updatedFilters.status || ""
+      status: updatedFilters.status || "All"
     };
 
     setFilters(newFilters);
@@ -292,13 +306,16 @@ const PropertiesPage = () => {
     if (newFilters.city) newSearchParams.set("city", newFilters.city);
     if (newFilters.bedrooms) newSearchParams.set("bedrooms", newFilters.bedrooms);
     if (newFilters.searchTerm) newSearchParams.set("search", newFilters.searchTerm);
+
     if (newFilters.rentRange[0] > 0) newSearchParams.set("minRent", newFilters.rentRange[0]);
-    if (newFilters.rentRange[1] < 50000) newSearchParams.set("maxRent", newFilters.rentRange[1]);
-    if (newFilters.depositRange[0] > 0) newSearchParams.set("minBudget", newFilters.depositRange[0]);
-    if (newFilters.depositRange[1] < 100000) newSearchParams.set("maxBudget", newFilters.depositRange[1]);
-    if (newFilters.amenities) newSearchParams.set("amenities", newFilters.amenities);
+    if (newFilters.rentRange[1] < 500000) newSearchParams.set("maxRent", newFilters.rentRange[1]);
+
+    if (newFilters.budgetRange[0] > 0) newSearchParams.set("minBudget", newFilters.budgetRange[0]);
+    if (newFilters.budgetRange[1] < 30000000) newSearchParams.set("maxBudget", newFilters.budgetRange[1]);
+
+    if (newFilters.amenities && newFilters.amenities.length > 0) newSearchParams.set("amenities", newFilters.amenities.join(","));
     if (newFilters.title) newSearchParams.set("title", newFilters.title);
-    if (newFilters.status) newSearchParams.set("status", newFilters.status);
+    if (newFilters.status && newFilters.status !== "All") newSearchParams.set("status", newFilters.status);
 
     setSearchParams(newSearchParams);
   };
@@ -322,7 +339,7 @@ const PropertiesPage = () => {
     search: filters.searchTerm,
     amenities: filters.amenities,
     title: filters.title,
-    budgetRange: filters.depositRange,
+    budgetRange: filters.budgetRange,
     rentRange: filters.rentRange,
     status: filters.status
   };
@@ -334,15 +351,16 @@ const PropertiesPage = () => {
     if (filters.city) active.push({ key: 'city', label: 'City', value: filters.city });
     if (filters.bedrooms) active.push({ key: 'bedrooms', label: 'Bedrooms', value: `${filters.bedrooms} BHK` });
     if (filters.searchTerm) active.push({ key: 'search', label: 'Search', value: filters.searchTerm });
-    if (filters.amenities) active.push({ key: 'amenities', label: 'amenities', value: filters.amenities });
+    if (filters.amenities && filters.amenities.length > 0) active.push({ key: 'amenities', label: 'amenities', value: filters.amenities.join(", ") });
     if (filters.title) active.push({ key: 'title', label: 'title', value: filters.title });
-    if (filters.rentRange[0] > 0 || filters.rentRange[1] < 50000) {
+
+    if (filters.rentRange[0] > 0 || filters.rentRange[1] < 500000) {
       active.push({ key: 'rent', label: 'Rent Range', value: `₹${filters.rentRange[0].toLocaleString()} - ₹${filters.rentRange[1].toLocaleString()}` });
     }
-    if (filters.depositRange[0] > 0 || filters.depositRange[1] < 100000) {
-      active.push({ key: 'budget', label: 'Budget Range', value: `₹${filters.depositRange[0].toLocaleString()} - ₹${filters.depositRange[1].toLocaleString()}` });
+    if (filters.budgetRange[0] > 0 || filters.budgetRange[1] < 30000000) {
+      active.push({ key: 'budget', label: 'Budget Range', value: `₹${filters.budgetRange[0].toLocaleString()} - ₹${filters.budgetRange[1].toLocaleString()}` });
     }
-    if (filters.status) active.push({ key: 'status', label: 'status', value: filters.status });
+    if (filters.status && filters.status !== "All") active.push({ key: 'status', label: 'status', value: filters.status });
     return active;
   };
 
@@ -354,9 +372,9 @@ const PropertiesPage = () => {
       search: "",
       amenities: [],
       title: "",
-      budgetRange: [0, 100000],
-      rentRange: [0, 50000],
-      status: 0
+      budgetRange: [0, 30000000],
+      rentRange: [0, 500000],
+      status: "All"
     });
   };
 

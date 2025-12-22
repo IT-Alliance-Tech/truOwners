@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "./home.css";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
-import headerImage from "../../../../public/home_banner.jpeg"; // ✅ corrected path
+import headerImage from "../../../../public/home_banner.jpeg";
 import search from "../../../assets/images/home/search.svg";
 import useScreenSize from "../../helper/userScreenSize.jsx";
 import PropertyTypeSelect from "../search-screen/propertyTypeSelect.jsx";
@@ -87,14 +87,14 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
       }
 
       const params = new URLSearchParams();
-      if (filters.status) params.append("status", filters.status);
+      if (filters.status && filters.status !== "All") params.append("status", filters.status);
       if (filters.propertyType) params.append("propertyType", filters.propertyType);
       if (filters.city) params.append("city", filters.city);
       if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
       if (filters.searchTerm) params.append("search", filters.searchTerm);
       if (filters.maxBudget) params.append("maxBudget", filters.maxBudget);
 
-      console.log(params.toString(), "params");
+      console.log("Fetching with params:", params.toString());
 
       const response = await fetch(
         `${buildApiUrl(API_CONFIG.USER.PROPERTIES)}?${params.toString()}`,
@@ -117,7 +117,9 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
       }
 
       if (data.success) {
-        setProperties(data.data.properties || []);
+        const fetchedProperties = data.data.properties || [];
+        console.log("Fetched properties:", fetchedProperties);
+        setProperties(fetchedProperties);
       }
     } catch (err) {
       console.error("Fetch properties error:", err);
@@ -213,8 +215,11 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
   };
 
   const applyFilters = () => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    console.log("Applying frontend filters, searchTerm:", searchTerm);
+    console.log("Total properties before filter:", properties.length);
+    
+    if (searchTerm && searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase().trim();
       const filtered = properties.filter((property) => {
         const titleMatch = property.title?.toLowerCase().includes(searchLower);
         const descMatch = property.description?.toLowerCase().includes(searchLower);
@@ -223,8 +228,10 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
           .includes(searchLower);
         return titleMatch || descMatch || locationMatch;
       });
+      console.log("Filtered properties:", filtered.length);
       setFilteredProperties(filtered);
     } else {
+      console.log("No search term, showing all properties");
       setFilteredProperties(properties);
     }
   };
@@ -232,9 +239,12 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
   const getLocationString = (location) => {
     if (typeof location === "string") return location;
     if (location && typeof location === "object") {
+      // Prioritize city first
+      if (location.city) {
+        return location.state ? `${location.city}, ${location.state}` : location.city;
+      }
       if (location.address) return location.address;
       if (location.street) return location.street;
-      if (location.city && location.state) return `${location.city}, ${location.state}`;
       return "Location not specified";
     }
     return "Location not specified";
@@ -284,7 +294,7 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
         />
       </motion.div>
 
-      {/* ✅ FILTER SECTION — removed mt-3 (margin-top) */}
+      {/* ✅ FILTER SECTION */}
       <motion.div
         className={`home_filter_main_container card border-0 p-1 mt-0 bg-transparent`}
         style={{ marginTop: "0 !important" }}
@@ -305,15 +315,16 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
               }}
               currentFilters={filters}
               onSearch={(queryString, updatedFilters) => {
+                console.log("Filter updated:", updatedFilters);
                 setFilters({
                   ...filters,
-                  status: updatedFilters.status,
-                  propertyType: updatedFilters.propertyType,
-                  city: updatedFilters.city,
-                  bedrooms: updatedFilters.bedrooms,
-                  searchTerm: updatedFilters.search,
+                  status: updatedFilters.status || "All",
+                  propertyType: updatedFilters.propertyType || "",
+                  city: updatedFilters.city || "",
+                  bedrooms: updatedFilters.bedrooms || "",
+                  searchTerm: updatedFilters.search || "",
                   rentRange: updatedFilters.rentRange,
-                  maxBudget: updatedFilters.maxBudget,
+                  maxBudget: updatedFilters.maxBudget || "",
                 });
               }}
             />
@@ -337,21 +348,20 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
               className="btn btn-primary"
               onClick={() => {
                 setFilters({
-                  location: '',
-                  propertyType: 'all',
-                  priceRange: { min: 0, max: 10000 },
-                  bedrooms: 'any',
-                  amenities: []
-                })
-                setSearchTerm('')
+                  status: "All",
+                  propertyType: "",
+                  city: "",
+                  bedrooms: "",
+                  searchTerm: "",
+                  maxBudget: "",
+                });
+                setSearchTerm("");
               }}
             >
               Clear All Filters
             </button>
           </div>
         ) : (
-          // your list…
-
           <div className="properties-grid">
             {filteredProperties.slice(0, 6).map((property, index) => (
               <motion.div
@@ -378,9 +388,16 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
             fullWidth
             variant="contained"
             color="primary"
-            onClick={() =>
-              navigate(`/properties?${new URLSearchParams(filters).toString()}`)
-            }
+            onClick={() => {
+              const urlParams = new URLSearchParams();
+              if (filters.status && filters.status !== "All") urlParams.append("status", filters.status);
+              if (filters.propertyType) urlParams.append("propertyType", filters.propertyType);
+              if (filters.city) urlParams.append("city", filters.city);
+              if (filters.bedrooms) urlParams.append("bedrooms", filters.bedrooms);
+              if (filters.searchTerm) urlParams.append("search", filters.searchTerm);
+              if (filters.maxBudget) urlParams.append("maxBudget", filters.maxBudget);
+              navigate(`/properties?${urlParams.toString()}`);
+            }}
             sx={{
               mt: 3,
               fontWeight: 600,
