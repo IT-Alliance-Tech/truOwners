@@ -77,7 +77,7 @@ const HomeHeaderContainer = () => {
       }
 
       const params = new URLSearchParams();
-      if (filters.listingType) {
+      if (filters.listingType && filters.listingType !== "All") {
         params.append("listingType", filters.listingType);
       }
 
@@ -300,7 +300,7 @@ const HomeHeaderContainer = () => {
                 setFilters({
                   ...filters,
                   status: updatedFilters.status,
-                  listingType: updatedFilters.listingType,
+                  listingType: updatedFilters.status, // Map status to listingType for API
                   propertyType: updatedFilters.propertyType,
                   city: updatedFilters.city,
                   bedrooms: updatedFilters.bedrooms,

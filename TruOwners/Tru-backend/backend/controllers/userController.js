@@ -313,8 +313,6 @@ const getPropertyById = async (req, res) => {
 
   try {
     // fetch property
-    console.log("FINAL FILTER QUERY:", JSON.stringify(filterQuery, null, 2));
-
     const property = await Property.findById(id).lean();
     if (!property) {
       return res.status(404).json({
