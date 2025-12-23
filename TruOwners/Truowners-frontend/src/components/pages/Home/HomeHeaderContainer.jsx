@@ -1,15 +1,8 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import "./home.css";
-import Select from "react-select";
-import CreatableSelect from "react-select/creatable";
-import headerImage from "../../../../public/home_banner.jpeg"; // ✅ corrected path
-import search from "../../../assets/images/home/search.svg";
+import headerImage from "../../../../public/home_banner.jpeg";
 import useScreenSize from "../../helper/userScreenSize.jsx";
-import PropertyTypeSelect from "../search-screen/propertyTypeSelect.jsx";
-import { BudgetFilter } from "../search-screen/budgetFilter.jsx";
-import SearchBar from "../search-screen/searchBar.jsx";
 import { useNavigate } from "react-router-dom";
-import PropertyFilters from "./PropertyFilters.jsx";
 import PropertyFilter from "./PropertyFilter.jsx";
 import { useAuth } from "../../../context/AuthContext.jsx";
 import { API_CONFIG, buildApiUrl } from "../../../config/api.js";
@@ -22,30 +15,26 @@ import Register from "../Auth/SignUp";
 import PropertyDetailsModal from "./PropertyDetailsModal.jsx";
 import { motion } from "framer-motion";
 
-const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => {
+const HomeHeaderContainer = () => {
   const width = useScreenSize();
   const navigate = useNavigate();
-  const [searchedItems, setSearchedItems] = useState("");
-  let locationData = "Bangalore";
 
-  const [sortBy, setSortBy] = useState("newest");
   const [searchTerm, setSearchTerm] = useState("");
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
-  const { user, isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [wishlist, setWishlist] = useState([]);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showPropertyDetails, setShowPropertyDetails] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
-  const [postType, setPostType] = useState(null);
 
   const [filters, setFilters] = useState({
     status: "All",
     propertyType: "",
+    listingType: "",
     city: "",
     bedrooms: "",
     searchTerm: "",
@@ -57,6 +46,7 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
     if (isAuthenticated) {
       fetchWishlist();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, filters]);
 
   useEffect(() => {
@@ -71,11 +61,11 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
 
   useEffect(() => {
     applyFilters();
-  }, [properties, searchTerm, sortBy]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [properties, searchTerm]);
 
   const fetchProperties = async () => {
     setLoading(true);
-    setError("");
 
     try {
       const headers = {
@@ -87,8 +77,12 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
       }
 
       const params = new URLSearchParams();
-      if (filters.status) params.append("status", filters.status);
-      if (filters.propertyType) params.append("propertyType", filters.propertyType);
+      if (filters.listingType) {
+        params.append("listingType", filters.listingType);
+      }
+
+      if (filters.propertyType)
+        params.append("propertyType", filters.propertyType);
       if (filters.city) params.append("city", filters.city);
       if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
       if (filters.searchTerm) params.append("search", filters.searchTerm);
@@ -121,7 +115,7 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
       }
     } catch (err) {
       console.error("Fetch properties error:", err);
-      setError(err.message || "Failed to load properties. Please try again.");
+      // Error handling - could show toast notification here
     } finally {
       setLoading(false);
     }
@@ -196,11 +190,7 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
     setShowLogin(true);
   };
 
-  const handleAuthSuccess = () => {
-    setShowLogin(false);
-    setShowRegister(false);
-    setShowAuthPrompt(false);
-  };
+  // Removed unused handleAuthSuccess function
 
   const handleSwitchToRegister = () => {
     setShowLogin(false);
@@ -217,7 +207,9 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
       const searchLower = searchTerm.toLowerCase();
       const filtered = properties.filter((property) => {
         const titleMatch = property.title?.toLowerCase().includes(searchLower);
-        const descMatch = property.description?.toLowerCase().includes(searchLower);
+        const descMatch = property.description
+          ?.toLowerCase()
+          .includes(searchLower);
         const locationMatch = getLocationString(property.location)
           .toLowerCase()
           .includes(searchLower);
@@ -234,7 +226,8 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
     if (location && typeof location === "object") {
       if (location.address) return location.address;
       if (location.street) return location.street;
-      if (location.city && location.state) return `${location.city}, ${location.state}`;
+      if (location.city && location.state)
+        return `${location.city}, ${location.state}`;
       return "Location not specified";
     }
     return "Location not specified";
@@ -279,11 +272,10 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
             height: "100%",
             maxHeight: "400px",
             objectFit: "cover",
-            objectPosition: "0% 0%"
+            objectPosition: "0% 0%",
           }}
         />
       </motion.div>
-
       {/* ✅ FILTER SECTION — removed mt-3 (margin-top) */}
       <motion.div
         className={`home_filter_main_container card border-0 p-1 mt-0 bg-transparent`}
@@ -308,6 +300,7 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
                 setFilters({
                   ...filters,
                   status: updatedFilters.status,
+                  listingType: updatedFilters.listingType,
                   propertyType: updatedFilters.propertyType,
                   city: updatedFilters.city,
                   bedrooms: updatedFilters.bedrooms,
@@ -320,30 +313,32 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
           </div>
         </div>
       </motion.div>
-
       {/* ✅ Properties Section */}
       <div className="properties-section sec-top">
         <div className="properties-header">
           <h2>Featured Properties</h2>
           <p>Browse through our verified listings</p>
         </div>
-
         {filteredProperties.length === 0 ? (
           <div className="empty-properties d-flex flex-column align-items-center text-center">
             <div className="empty-icon">🏠</div>
             <h3>No properties match your criteria</h3>
-            <p>Try adjusting your filters or search terms to see more results.</p>
+            <p>
+              Try adjusting your filters or search terms to see more results.
+            </p>
             <button
               className="btn btn-primary"
               onClick={() => {
                 setFilters({
-                  location: '',
-                  propertyType: 'all',
-                  priceRange: { min: 0, max: 10000 },
-                  bedrooms: 'any',
-                  amenities: []
-                })
-                setSearchTerm('')
+                  status: "All",
+                  propertyType: "",
+                  listingType: "",
+                  city: "",
+                  bedrooms: "",
+                  searchTerm: "",
+                  maxBudget: "",
+                });
+                setSearchTerm("");
               }}
             >
               Clear All Filters
@@ -356,7 +351,13 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
             {filteredProperties.slice(0, 6).map((property, index) => (
               <motion.div
                 key={property.id}
-                initial={{ opacity: 0, y: 20, display: "flex", justifyContent: "center", alignItems: "center" }}
+                initial={{
+                  opacity: 0,
+                  y: 20,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
@@ -381,11 +382,15 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
             onClick={() => {
               const urlParams = new URLSearchParams();
               if (filters.status) urlParams.append("status", filters.status);
-              if (filters.propertyType) urlParams.append("propertyType", filters.propertyType);
+              if (filters.propertyType)
+                urlParams.append("propertyType", filters.propertyType);
               if (filters.city) urlParams.append("city", filters.city);
-              if (filters.bedrooms) urlParams.append("bedrooms", filters.bedrooms);
-              if (filters.searchTerm) urlParams.append("search", filters.searchTerm);
-              if (filters.maxBudget) urlParams.append("maxBudget", filters.maxBudget);
+              if (filters.bedrooms)
+                urlParams.append("bedrooms", filters.bedrooms);
+              if (filters.searchTerm)
+                urlParams.append("search", filters.searchTerm);
+              if (filters.maxBudget)
+                urlParams.append("maxBudget", filters.maxBudget);
               navigate(`/properties?${urlParams.toString()}`);
             }}
             sx={{
@@ -402,14 +407,19 @@ const HomeHeaderContainer = ({ activeBtn = "all", activeTab, setActiveTab }) => 
           </Button>
         </div>
       </div>
-
       {/* ✅ Modals */}
       {showAuthPrompt && <AuthPromptModal onClose={handleCloseModals} />}
       {showLogin && (
-        <Login onClose={handleCloseModals} onSwitchToSignUp={handleSwitchToRegister} />
+        <Login
+          onClose={handleCloseModals}
+          onSwitchToSignUp={handleSwitchToRegister}
+        />
       )}
       {showRegister && (
-        <Register onClose={handleCloseModals} onSwitchToLogin={handleSwitchToLogin} />
+        <Register
+          onClose={handleCloseModals}
+          onSwitchToLogin={handleSwitchToLogin}
+        />
       )}
       {showPropertyDetails && selectedProperty && (
         <PropertyDetailsModal

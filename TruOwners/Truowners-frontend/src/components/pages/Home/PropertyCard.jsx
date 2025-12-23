@@ -312,9 +312,14 @@ const PropertyCard = ({
 
         <div
           className="property-card__location"
-          title={getLocationString(property?.location)}
+          title={isAuthenticated ? getLocationString(property?.location) : "Login to view location"}
         >
-          <span>{getLocationString(property?.location)}</span>
+          <span>
+            {isAuthenticated 
+              ? getLocationString(property?.location)
+              : "📍 Login to view location"
+            }
+          </span>
         </div>
 
         <div className="property-card__specs">
