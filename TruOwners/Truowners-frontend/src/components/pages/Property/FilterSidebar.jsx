@@ -22,9 +22,6 @@ import HomeIcon from "@mui/icons-material/Home";
 import BedIcon from "@mui/icons-material/Bed";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 
-
-
-
 // ======== Constants ========
 const propertyTypes = [
   { label: "All Types", value: "" },
@@ -235,7 +232,11 @@ const PriceInput = styled(TextField)(({ theme }) => ({
 }));
 
 // ======== Component ========
-export default function FilterSidebar({ initialFilters = {}, currentFilters = {}, onSearch }) {
+export default function FilterSidebar({
+  initialFilters = {},
+  currentFilters = {},
+  onSearch,
+}) {
   // format number into readable ₹ with L / Cr
   const formatCurrencyShort = (val) => {
     if (val >= 10000000) return (val / 10000000).toFixed(2) + " Cr";
@@ -269,6 +270,7 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
   const [customRange, setCustomRange] = useState([5000, 30000000]);
 
   useEffect(() => {
+    if (statusTab === 0) return;
     const [min, max] = getSuggestedRange(statusTab);
     setCustomRange([min, max]);
 
@@ -293,38 +295,44 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
     }));
   }, [customRange]);
 
-
-
-
-
-
   const lastSearchRef = useRef("");
   const isInitialMount = useRef(true);
 
   // Update local state when currentFilters change (only if different)
   useEffect(() => {
     if (!isInitialMount.current) {
-      const hasChanges = Object.keys(currentFilters).some(key => {
+      const hasChanges = Object.keys(currentFilters).some((key) => {
         const currentValue = currentFilters[key];
         const localValue = filters[key];
 
         // Handle array comparison for ranges
         if (Array.isArray(currentValue) && Array.isArray(localValue)) {
-          return currentValue[0] !== localValue[0] || currentValue[1] !== localValue[1];
+          return (
+            currentValue[0] !== localValue[0] ||
+            currentValue[1] !== localValue[1]
+          );
         }
 
         return currentValue !== localValue;
       });
 
       if (hasChanges) {
-        setFilters(prev => ({
+        setFilters((prev) => ({
           ...prev,
           ...currentFilters,
           // Update the min/max values for sliders
-          budgetMin: currentFilters.budgetRange ? currentFilters.budgetRange[0].toString() : "",
-          budgetMax: currentFilters.budgetRange ? currentFilters.budgetRange[1].toString() : "",
-          rentMin: currentFilters.rentRange ? currentFilters.rentRange[0].toString() : "",
-          rentMax: currentFilters.rentRange ? currentFilters.rentRange[1].toString() : "",
+          budgetMin: currentFilters.budgetRange
+            ? currentFilters.budgetRange[0].toString()
+            : "",
+          budgetMax: currentFilters.budgetRange
+            ? currentFilters.budgetRange[1].toString()
+            : "",
+          rentMin: currentFilters.rentRange
+            ? currentFilters.rentRange[0].toString()
+            : "",
+          rentMax: currentFilters.rentRange
+            ? currentFilters.rentRange[1].toString()
+            : "",
         }));
       }
     } else {
@@ -382,17 +390,23 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
     const params = new URLSearchParams();
 
     // Determine status based on selected tab
-    const statusValue =
-      statusTab === 0 ? "All" :
-        statusTab === 1 ? "Rent" :
-          statusTab === 2 ? "Sale" :
-            statusTab === 3 ? "Lease" :
-              "Commercial";
 
-    params.append("status", statusValue);
+    if (statusTab === 0) {
+      // Don't append listingType for "ALL STATUS"
+      // Let backend return all types
+    } else if (statusTab === 1) {
+      params.append("listingType", "rent");
+    } else if (statusTab === 2) {
+      params.append("listingType", "sell");
+    } else if (statusTab === 3) {
+      params.append("listingType", "lease");
+    } else if (statusTab === 4) {
+      params.append("listingType", "commercial");
+    }
 
     // Common filters
-    if (filters.propertyType) params.append("propertyType", filters.propertyType);
+    if (filters.propertyType)
+      params.append("propertyType", filters.propertyType);
     if (filters.city) params.append("city", filters.city);
     if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
     if (filters.search) params.append("search", filters.search);
@@ -400,22 +414,31 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
     if (filters.amenities && filters.amenities.length > 0)
       params.append("amenities", filters.amenities.join(","));
 
-    // Unified budget/rent handling
-    if (statusTab === 1 || statusTab === 4 || statusTab === 0) {
-      if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
-      if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
-    }
-
-    if (statusTab === 2 || statusTab === 3 || statusTab === 0) {
-      if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
-      if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+    // Budget/Rent handling based on listing type
+    if (statusTab === 0) {
+      // ALL STATUS - send both rent and price ranges if set
+      if (filters.rentRange[0] > 0 || filters.rentRange[1] < 500000) {
+        params.append("minRent", filters.rentRange[0]);
+        params.append("maxRent", filters.rentRange[1]);
+      }
+      if (filters.budgetRange[0] > 0 || filters.budgetRange[1] < 30000000) {
+        params.append("minBudget", filters.budgetRange[0]);
+        params.append("maxBudget", filters.budgetRange[1]);
+      }
+    } else if (statusTab === 1 || statusTab === 4) {
+      // Rent/Commercial - send rent range
+      params.append("minRent", filters.rentRange[0]);
+      params.append("maxRent", filters.rentRange[1]);
+    } else if (statusTab === 2 || statusTab === 3) {
+      // Sale/Lease - send price range
+      params.append("minBudget", filters.budgetRange[0]);
+      params.append("maxBudget", filters.budgetRange[1]);
     }
 
     lastSearchRef.current = filters.search;
 
     onSearch(params.toString(), {
       ...filters,
-      status: statusValue,
     });
   };
 
@@ -441,7 +464,6 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
 
       console.log(updatedAmenities, "filters");
 
-
       return {
         ...prev,
         amenities: updatedAmenities,
@@ -451,12 +473,10 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
 
   console.log(filters, "filters");
 
-
   return (
     <div>
       {/* Search Row */}
       <Box sx={{ mb: 4 }}>
-
         <Grid item xs={12} md={9}>
           <SearchTextField
             fullWidth
@@ -504,21 +524,21 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
       {/* Tabs */}
       <Box
         sx={{
-          '& .MuiTabs-flexContainer': {
-            justifyContent: 'center',
+          "& .MuiTabs-flexContainer": {
+            justifyContent: "center",
             display: "grid", // change justify to center (or 'flex-start', 'flex-end', etc.)
           },
-          mb: 4, textAlign: "center", display: "grid"
-        }}>
-        <StyledTabs
-
-          value={statusTab} onChange={handleTabChange} centered >
+          mb: 4,
+          textAlign: "center",
+          display: "grid",
+        }}
+      >
+        <StyledTabs value={statusTab} onChange={handleTabChange} centered>
           <StyledTab label="ALL STATUS" />
           <StyledTab label="FOR RENT" />
           <StyledTab label="FOR SALE" />
           <StyledTab label="FOR LEASE" />
           <StyledTab label="FOR COMMERCIAL" />
-
         </StyledTabs>
       </Box>
 
@@ -536,16 +556,16 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
           onChange={(e) => handleChange("propertyType", e.target.value)}
           SelectProps={{
             displayEmpty: true,
-            renderValue: (value) => (value) || <span style={{ color: "#9e9e9e" }}>PROPERTY TYPE</span>,
+            renderValue: (value) =>
+              value || <span style={{ color: "#9e9e9e" }}>PROPERTY TYPE</span>,
             MenuProps: {
               disableScrollLock: true,
               PaperProps: {
                 sx: {
-                  zIndex: 3000,   // higher than drawer (2500)
+                  zIndex: 3000, // higher than drawer (2500)
                 },
               },
             },
-
           }}
         >
           {propertyTypes.map((type) => (
@@ -588,7 +608,12 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
           onChange={(e) => handleChange("bedrooms", e.target.value)}
           SelectProps={{
             displayEmpty: true,
-            renderValue: (value) => (value ? `${value} BHK` : <span style={{ color: "#9e9e9e" }}>BEDROOMS</span>),
+            renderValue: (value) =>
+              value ? (
+                `${value} BHK`
+              ) : (
+                <span style={{ color: "#9e9e9e" }}>BEDROOMS</span>
+              ),
           }}
         >
           {bedroomOptions.map((option) => (
@@ -607,7 +632,7 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
           sx={{
             py: 1,
             fontWeight: 600,
-            borderRadius: '8px'
+            borderRadius: "8px",
           }}
         >
           More Filters
@@ -619,7 +644,8 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
           {/* --- Universal Price Range (Works for Rent, Sale, Lease, Commercial) --- */}
           <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
             <SectionLabel>
-              PRICE RANGE ₹{formatCurrencyShort(customRange[0])} – ₹{formatCurrencyShort(customRange[1])}
+              PRICE RANGE ₹{formatCurrencyShort(customRange[0])} – ₹
+              {formatCurrencyShort(customRange[1])}
             </SectionLabel>
 
             <SliderContainer>
@@ -665,7 +691,6 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
             </SliderContainer>
           </Grid>
 
-
           {/* --- RENT RANGE Section (unchanged, used for rent-specific filters) --- */}
           <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
             {(statusTab === 1 || statusTab === 4) && (
@@ -675,10 +700,12 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
                   <Box sx={{ mb: 2 }}>
                     <Slider
                       value={filters.rentRange}
-                      onChange={(e, value) => handleSliderChange("rentRange", value)}
+                      onChange={(e, value) =>
+                        handleSliderChange("rentRange", value)
+                      }
                       valueLabelDisplay="auto"
                       min={0}
-                      max={50000}
+                      max={500000}
                       step={500}
                       valueLabelFormat={(value) => `₹${value.toLocaleString()}`}
                       sx={{
@@ -752,16 +779,25 @@ export default function FilterSidebar({ initialFilters = {}, currentFilters = {}
       ) : (
         <></>
       )}
-
-
-
-
     </div>
   );
 }
 
 const amenitiesList = [
-  'WiFi', 'Parking', 'Gym', 'Swimming Pool', 'Security', 'Elevator',
-  'Balcony', 'Garden', 'Furnished', 'Air Conditioning', 'Heating',
-  'Laundry', 'Pet Friendly', 'Near Metro', 'Shopping Mall', 'Hospital'
+  "WiFi",
+  "Parking",
+  "Gym",
+  "Swimming Pool",
+  "Security",
+  "Elevator",
+  "Balcony",
+  "Garden",
+  "Furnished",
+  "Air Conditioning",
+  "Heating",
+  "Laundry",
+  "Pet Friendly",
+  "Near Metro",
+  "Shopping Mall",
+  "Hospital",
 ];
