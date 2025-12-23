@@ -45,15 +45,15 @@ const defaultFilters = {
   propertyType: "",
   city: "",
   bedrooms: "",
-  budgetRange: [0, 100000],
+  budgetRange: [0, 30000000],
   budgetMin: "",
   budgetMax: "",
-  rentRange: [0, 50000],
+  rentRange: [0, 500000],
   rentMin: "",
   rentMax: "",
-  amenities: [""],
+  amenities: [],
   title: "",
-  search: "All",
+  search: "",
 };
 
 // ======== Styled Components ========
@@ -260,22 +260,63 @@ export default function FilterSidebar({
     }
   };
 
-  const [statusTab, setStatusTab] = useState(0);
+  // Map status to tab index
+  const getStatusTabIndex = (status) => {
+    switch (String(status).toLowerCase()) {
+      case "rent":
+        return 1;
+      case "sell":
+      case "sale":
+        return 2;
+      case "lease":
+        return 3;
+      case "commercial":
+        return 4;
+      default:
+        return 0;
+    }
+  };
+
+  const [statusTab, setStatusTab] = useState(() => getStatusTabIndex(currentFilters.status || initialFilters.status || ""));
   const [showMoreFilters, setShowMoreFilters] = useState();
   const [filters, setFilters] = useState(() => ({
     ...defaultFilters,
     ...initialFilters,
+    ...currentFilters,
+    search: currentFilters.search || initialFilters.search || defaultFilters.search,
+    status: currentFilters.status || initialFilters.status || defaultFilters.status,
   }));
-  // Custom range slider state (₹5K → ₹3Cr)
-  const [customRange, setCustomRange] = useState([5000, 30000000]);
+  // Custom range slider state 
+  const [customRange, setCustomRange] = useState(() => {
+    const tabIndex = getStatusTabIndex(currentFilters.status || initialFilters.status || "");
+    if (tabIndex === 1 || tabIndex === 4) return currentFilters.rentRange || [5000, 500000];
+    if (tabIndex === 2 || tabIndex === 3) return currentFilters.budgetRange || [1000000, 30000000];
+    return [5000, 30000000];
+  });
+
+  const skipInitialRangeReset = useRef(true);
 
   useEffect(() => {
-    if (statusTab === 0) return;
+    const statusMap = ["All", "rent", "sell", "lease", "commercial"];
+    const newStatus = statusMap[statusTab];
+    
+    // On initial mount or when syncing from external prop, don't reset ranges if we already have them
+    if (skipInitialRangeReset.current) {
+      skipInitialRangeReset.current = false;
+      setFilters(prev => ({ ...prev, status: newStatus }));
+      return;
+    }
+
+    if (statusTab === 0) {
+      setFilters(prev => ({ ...prev, status: newStatus }));
+      return;
+    }
     const [min, max] = getSuggestedRange(statusTab);
     setCustomRange([min, max]);
 
     setFilters((prev) => ({
       ...prev,
+      status: newStatus,
       rentRange: [min, max],
       budgetRange: [min, max],
       rentMin: String(min),
@@ -317,23 +358,36 @@ export default function FilterSidebar({
       });
 
       if (hasChanges) {
+        console.log("FilterSidebar: currentFilters changed, syncing state", currentFilters);
         setFilters((prev) => ({
           ...prev,
           ...currentFilters,
+          search: currentFilters.search || prev.search,
           // Update the min/max values for sliders
           budgetMin: currentFilters.budgetRange
             ? currentFilters.budgetRange[0].toString()
-            : "",
+            : prev.budgetMin,
           budgetMax: currentFilters.budgetRange
             ? currentFilters.budgetRange[1].toString()
-            : "",
+            : prev.budgetMax,
           rentMin: currentFilters.rentRange
             ? currentFilters.rentRange[0].toString()
-            : "",
+            : prev.rentMin,
           rentMax: currentFilters.rentRange
             ? currentFilters.rentRange[1].toString()
-            : "",
+            : prev.rentMax,
         }));
+
+        if (currentFilters.status) {
+          const newTabIndex = getStatusTabIndex(currentFilters.status);
+          setStatusTab(newTabIndex);
+          
+          if (newTabIndex === 1 || newTabIndex === 4) {
+             if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
+          } else if (newTabIndex === 2 || newTabIndex === 3) {
+             if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
+          }
+        }
       }
     } else {
       isInitialMount.current = false;
@@ -439,6 +493,9 @@ export default function FilterSidebar({
 
     onSearch(params.toString(), {
       ...filters,
+      search: filters.search, // Explicitly pass search
+      // Ensure the correct status is sent even if the filters object was behind
+      status: ["All", "rent", "sell", "lease", "commercial"][statusTab]
     });
   };
 
