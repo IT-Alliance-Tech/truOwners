@@ -1172,57 +1172,68 @@ const PropertyDetailsPage = () => {
             </div>
           </div>
 
-          {/* Return to Home Section at the bottom */}
-          <div className="return-section">
-            <div className="return-content d-flex justify-content-between align-items-center">
-              {/* <h3>Explore More Properties</h3>
-              <p>Find more amazing properties that match your preferences</p>
-              <button className="return-home-btn" onClick={handleReturnToHome}>
-                🏠 Browse All Properties
-              </button> */}
-              <h3>Similar Properties</h3>
-              <button className="return-home-btn" onClick={handleReturnToHome} style={{ maxWidth: "150px", fontSize: "12px", maxHeight: "35px" }}>
-                Show more
-              </button>
-            </div>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: 3,
-                mb: 4,
-                mt: 4,
-                '@media (max-width: 768px)': {
-                  gridTemplateColumns: '1fr',
-                  gap: 2,
-                },
-              }}
-            >
-              {similarProperties?.map((item, index) =>
-                index < 3 &&
-                (
-                  <div className='my-3 mb-md-4'>
-                    <div style={{ boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)", maxWidth: "325px" }}
-                      className='rounded-2 my-2 py-2 px-3 d-flex justify-content-between align-items-center'>
-                      <img src={trueOwnersLogo} alt='truowners' width={110} />
-                      <span> {timeAgo(item?.createdAt)}</span>
-                    </div>
-                    <div>
-                      <PropertyCard
-                        key={item.id}
-                        property={item}
-                        // isInWishlist={wishlist.includes(property.id)}
-                        onWishlistToggle={() => handleWishlistToggle(item.id)}
-                        onClick={() => handlePropertyClick(item)}
-                        // onLoginRequired={handleLoginRequired}
-                        isAuthenticated={isAuthenticated}
-                        postType={item?.listingType ?? "Rent"}
-                      /></div>
-                  </div>
-                )
-              )}
-            </Box>
+{/* Return to Home Section at the bottom */}
+<div className="return-section">
+  {/* FIXED: Header with proper class and structure */}
+  <div className="similar-properties-header">
+    <h3>Similar Properties</h3>
+    <button 
+      className="show-more-btn" 
+      onClick={handleReturnToHome}
+    >
+      Show more
+    </button>
+  </div>
+  
+  {/* Property Cards Grid */}
+  <Box
+    sx={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+      gap: 3,
+      mb: 4,
+      mt: 4,
+      '@media (max-width: 768px)': {
+        gridTemplateColumns: '1fr',
+        gap: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      },
+    }}
+  >
+    {similarProperties?.map((item, index) =>
+      index < 3 && (
+        <div key={item.id || index} className="similar-property-item">
+          {/* Header section with logo and time */}
+          <div className="property-header-info" style={{ 
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)", 
+            maxWidth: "325px",
+            width: "100%",
+            margin: "0 auto 15px"
+          }}>
+            <img src={trueOwnersLogo} alt='truowners' width={110} style={{ flexShrink: 0 }} />
+            <span style={{ whiteSpace: 'nowrap', fontSize: '12px' }}>
+              {timeAgo(item?.createdAt)}
+            </span>
           </div>
+          
+          {/* Property Card */}
+          <div style={{ maxWidth: "325px", width: "100%", margin: "0 auto" }}>
+            <PropertyCard
+              key={item.id}
+              property={item}
+              onWishlistToggle={() => handleWishlistToggle(item.id)}
+              onClick={() => handlePropertyClick(item)}
+              isAuthenticated={isAuthenticated}
+              postType={item?.listingType ?? "Rent"}
+            />
+          </div>
+        </div>
+      )
+    )}
+  </Box>
+</div>
         </div>
 
         {/* Booking Dialog */}

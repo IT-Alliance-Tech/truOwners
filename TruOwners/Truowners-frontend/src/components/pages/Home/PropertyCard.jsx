@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import FavoriteOutlined from "@mui/icons-material/FavoriteOutlined";
 import Favorite from "@mui/icons-material/Favorite";
 import { useWishlist } from "../../../context/Wishlist";
+import { useAuth } from "../../../context/AuthContext"; // IMPORTANT: Add this import
 import watermark from "../../../assets/images/water1.png";
 import fallbackImg from "../../../assets/images/Errorimg.png";
 import { motion } from "framer-motion";
@@ -37,6 +38,7 @@ const PropertyCard = ({
   postType
 }) => {
   const { isIn, toggle } = useWishlist();
+  const { isSubscribed } = useAuth(); // IMPORTANT: Get subscription status from context
 
   if (!property) {
     console.error("PropertyCard: No property data provided");
@@ -287,8 +289,6 @@ const PropertyCard = ({
             alignItems: "center",
           }}
         >
-
-          {/* ---------- UPDATED CONDITIONAL LOGIC ---------- */}
           {property?.rent || property?.price ? (
             <span className="property-card__price">
               {formatCurrency(property.rent || property.price)}
@@ -302,22 +302,33 @@ const PropertyCard = ({
               </span>
             )
             : null}
-          {/* ---------- END UPDATE ---------- */}
-
         </div>
 
         <h3 title={property?.title} className="property-card__title">
           {capitalizeText(property?.title) || "Untitled Property"}
         </h3>
 
+        {/* UPDATED: Location section with blur effect */}
         <div
           className="property-card__location"
-          title={isAuthenticated ? getLocationString(property?.location) : "Login to view location"}
+          style={{
+            filter: isAuthenticated && !isSubscribed ? 'blur(8px)' : 'none',
+            pointerEvents: isAuthenticated && !isSubscribed ? 'none' : 'auto',
+            userSelect: isAuthenticated && !isSubscribed ? 'none' : 'auto',
+            transition: 'filter 0.3s ease'
+          }}
+          title={
+            !isAuthenticated 
+              ? "Login to view location"
+              : !isSubscribed 
+                ? "Subscribe to view location" 
+                : getLocationString(property?.location)
+          }
         >
           <span>
-            {isAuthenticated 
-              ? getLocationString(property?.location)
-              : "📍 Login to view location"
+            {!isAuthenticated 
+              ? "📍 Login to view location"
+              : getLocationString(property?.location)
             }
           </span>
         </div>
