@@ -916,22 +916,22 @@ export default HomePage
 const propertyData = {
   leftCol: [
     [
-      { propertyType: "Villa", listingType: "Rent", backgroundImage: villaImg, size: "w75" },
-      { propertyType: "Apartment", listingType: "Sale", backgroundImage: aprtmentImg, size: "w25" },
+      { propertyType: "Villa", listingType: "sell", backgroundImage: villaImg, size: "w75" },
+      { propertyType: "Apartment", listingType: "sell", backgroundImage: aprtmentImg, size: "w25" },
     ],
     [
-      { propertyType: "Studio", listingType: "Lease", backgroundImage: studioImg, size: "w25" },
-      { propertyType: "Single Family Room", listingType: "Rent", backgroundImage: singleImg, size: "w75" },
+      { propertyType: "Studio", listingType: "rent", backgroundImage: studioImg, size: "w25" },
+      { propertyType: "Single Family Room", listingType: "rent", backgroundImage: singleImg, size: "w75" },
     ],
     [
-      { propertyType: "Office", listingType: "Commercial", backgroundImage: officeImg, size: "w75" },
-      { propertyType: "Shop", listingType: "Commercial", backgroundImage: shopImg, size: "w25" },
+      { propertyType: "Office", listingType: "commercial", backgroundImage: officeImg, size: "w75" },
+      { propertyType: "Shop", listingType: "commercial", backgroundImage: shopImg, size: "w25" },
     ],
   ],
   rightCol: {
     independent: {
       propertyType: "Independent House",
-      listingType: "Rent", // ✅ Add the type here
+      listingType: "rent", // ✅ Add the type here
       backgroundImage: indepenImg,
     },
     commercial: {

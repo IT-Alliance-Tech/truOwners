@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import FavoriteOutlined from "@mui/icons-material/FavoriteOutlined";
 import Favorite from "@mui/icons-material/Favorite";
 import { useWishlist } from "../../../context/Wishlist";
+import { useAuth } from "../../../context/AuthContext"; // IMPORTANT: Add this import
 import watermark from "../../../assets/images/water1.png";
 import fallbackImg from "../../../assets/images/Errorimg.png";
 import { motion } from "framer-motion";
@@ -37,6 +38,7 @@ const PropertyCard = ({
   postType
 }) => {
   const { isIn, toggle } = useWishlist();
+  const { isSubscribed } = useAuth(); // IMPORTANT: Get subscription status from context
 
   if (!property) {
     console.error("PropertyCard: No property data provided");
@@ -306,15 +308,30 @@ const PropertyCard = ({
           {capitalizeText(property?.title) || "Untitled Property"}
         </h3>
 
-        {/* Only show location if user is authenticated */}
-        {isAuthenticated && (
-          <div
-            className="property-card__location"
-            title={getLocationString(property?.location)}
-          >
-            <span>{getLocationString(property?.location)}</span>
-          </div>
-        )}
+        {/* UPDATED: Location section with blur effect */}
+        <div
+          className="property-card__location"
+          style={{
+            filter: isAuthenticated && !isSubscribed ? 'blur(8px)' : 'none',
+            pointerEvents: isAuthenticated && !isSubscribed ? 'none' : 'auto',
+            userSelect: isAuthenticated && !isSubscribed ? 'none' : 'auto',
+            transition: 'filter 0.3s ease'
+          }}
+          title={
+            !isAuthenticated 
+              ? "Login to view location"
+              : !isSubscribed 
+                ? "Subscribe to view location" 
+                : getLocationString(property?.location)
+          }
+        >
+          <span>
+            {!isAuthenticated 
+              ? "📍 Login to view location"
+              : getLocationString(property?.location)
+            }
+          </span>
+        </div>
 
         <div className="property-card__specs">
           <div className="property-card__spec">

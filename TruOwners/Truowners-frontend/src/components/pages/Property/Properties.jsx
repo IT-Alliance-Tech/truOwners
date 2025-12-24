@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { API_CONFIG, buildApiUrl } from "../../../config/api";
-import { handleApiError, getErrorMessage, validateApiResponse } from "../../../utils/errorHandler";
+import {
+  handleApiError,
+  getErrorMessage,
+  validateApiResponse,
+} from "../../../utils/errorHandler";
 import PropertyCard from "../Home/PropertyCard";
 import PropertyFilter from "../Home/PropertyFilter";
 import AuthPromptModal from "../Home/AuthPromptModal";
@@ -29,7 +33,7 @@ import {
   Home as HomeIcon,
   Warning as WarningIcon,
   Search as SearchIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import FilterSidebar from "./FilterSidebar";
 import BannerImg from "../../../assets/images/home/banner 1.png";
@@ -43,30 +47,45 @@ const PropertiesPage = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [page, setPage] = useState(() => parseInt(searchParams.get("page")) || 1);
+  const [page, setPage] = useState(
+    () => parseInt(searchParams.get("page")) || 1
+  );
   const [totalPages, setTotalPages] = useState(1);
   const [totalProperties, setTotalProperties] = useState(0);
 
   // Filter state - initialized from URL params to avoid initial unfiltered fetch
-  const [filters, setFilters] = useState(() => ({
-    propertyType: searchParams.get("propertyType") || "",
-    city: searchParams.get("city") || "",
-    bedrooms: searchParams.get("bedrooms") || "",
-    searchTerm: searchParams.get("search") || "",
-    amenities: searchParams.get("amenities")
-      ? searchParams.get("amenities").split(",").map((a) => a.trim())
-      : [],
-    title: searchParams.get("title") || "",
-    rentRange: [
-      parseInt(searchParams.get("minRent")) || 0,
-      parseInt(searchParams.get("maxRent")) || 500000,
-    ],
-    budgetRange: [
-      parseInt(searchParams.get("minBudget")) || 0,
-      parseInt(searchParams.get("maxBudget")) || 30000000,
-    ],
-    status: searchParams.get("status") || "All"
-  }));
+  const [filters, setFilters] = useState(() => {
+    const status = searchParams.get("status") || "All";
+    const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
+    const rawMaxRent = parseInt(searchParams.get("maxRent"));
+    
+    // If we have a budget/rent in URL, use it as the upper bound for both or specifically
+    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
+    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+
+    return {
+      propertyType: searchParams.get("propertyType") || "",
+      city: searchParams.get("city") || "",
+      bedrooms: searchParams.get("bedrooms") || "",
+      searchTerm: searchParams.get("search") || "",
+      amenities: searchParams.get("amenities")
+        ? searchParams
+            .get("amenities")
+            .split(",")
+            .map((a) => a.trim())
+        : [],
+      title: searchParams.get("title") || "",
+      rentRange: [
+        parseInt(searchParams.get("minRent")) || 0,
+        initialRentMax,
+      ],
+      budgetRange: [
+        parseInt(searchParams.get("minBudget")) || 0,
+        initialBudgetMax,
+      ],
+      status: status,
+    };
+  });
 
   // Modal states
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -78,27 +97,36 @@ const PropertiesPage = () => {
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-
   // Initialize filters from URL parameters ONLY when searchParams change
   useEffect(() => {
+    const status = searchParams.get("status") || "All";
+    const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
+    const rawMaxRent = parseInt(searchParams.get("maxRent"));
+    
+    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
+    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+
     const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
       city: searchParams.get("city") || "",
       bedrooms: searchParams.get("bedrooms") || "",
       searchTerm: searchParams.get("search") || "",
       amenities: searchParams.get("amenities")
-        ? searchParams.get("amenities").split(",").map((a) => a.trim())
+        ? searchParams
+            .get("amenities")
+            .split(",")
+            .map((a) => a.trim())
         : [],
       title: searchParams.get("title") || "",
       rentRange: [
         parseInt(searchParams.get("minRent")) || 0,
-        parseInt(searchParams.get("maxRent")) || 500000,
+        initialRentMax,
       ],
       budgetRange: [
         parseInt(searchParams.get("minBudget")) || 0,
-        parseInt(searchParams.get("maxBudget")) || 30000000,
+        initialBudgetMax,
       ],
-      status: searchParams.get("status") || "All"
+      status: status,
     };
 
     setFilters(updatedFilters);
@@ -132,20 +160,31 @@ const PropertiesPage = () => {
       // Build query parameters
       const params = new URLSearchParams();
 
-      if (filters.propertyType) params.append("propertyType", filters.propertyType);
+      if (filters.propertyType)
+        params.append("propertyType", filters.propertyType);
       if (filters.city) params.append("city", filters.city);
       if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
       if (filters.searchTerm) params.append("search", filters.searchTerm);
-      if (filters.amenities && filters.amenities.length > 0) params.append("amenities", filters.amenities.join(","));
+      if (filters.amenities && filters.amenities.length > 0)
+        params.append("amenities", filters.amenities.join(","));
       if (filters.title) params.append("title", filters.title);
 
-      if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
-      if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+      if (filters.status && filters.status !== "All")
+        params.append("listingType", filters.status);
 
-      if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
-      if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
-
-      if (filters.status && filters.status !== "All") params.append("status", filters.status);
+      if (filters.status === "rent" || filters.status === "commercial") {
+        if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
+        if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+      } else if (filters.status === "sell" || filters.status === "lease") {
+        if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
+        if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+      } else {
+        // All status - send both
+        if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
+        if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+        if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
+        if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+      }
 
       // Add pagination
       params.append("page", page.toString());
@@ -171,14 +210,14 @@ const PropertiesPage = () => {
 
       if (data.success) {
         setProperties(data.data.properties || []);
-        setTotalPages(data.data.totalPages || 1);
-        setTotalProperties(data.data.totalProperties || 0);
+        setTotalPages(data.data.pagination?.totalPages || 1);
+        setTotalProperties(data.data.pagination?.totalProperties || 0);
       } else {
         throw new Error(getErrorMessage(data));
       }
-      setMobileFilterOpen(false)
+      setMobileFilterOpen(false);
     } catch (err) {
-      if (err.name === 'AbortError') return;
+      if (err.name === "AbortError") return;
       console.error("Fetch properties error:", err);
       setError(err.message || "Failed to load properties. Please try again.");
       setProperties([]);
@@ -202,8 +241,8 @@ const PropertiesPage = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          const ids = (data.data.wishlist || []).map(item => item.id)
-          setWishlist(ids)
+          const ids = (data.data.wishlist || []).map((item) => item.id);
+          setWishlist(ids);
         }
       }
     } catch (err) {
@@ -281,7 +320,6 @@ const PropertiesPage = () => {
   };
 
   const handleFilterSearch = (queryString, updatedFilters) => {
-
     console.log(updatedFilters);
 
     // Update filters state
@@ -294,7 +332,7 @@ const PropertiesPage = () => {
       budgetRange: updatedFilters.budgetRange || [0, 30000000],
       amenities: updatedFilters.amenities || [],
       title: updatedFilters.title || "",
-      status: updatedFilters.status || "All"
+      status: updatedFilters.status || "All",
     };
 
     setFilters(newFilters);
@@ -302,20 +340,27 @@ const PropertiesPage = () => {
 
     // Update URL parameters
     const newSearchParams = new URLSearchParams();
-    if (newFilters.propertyType) newSearchParams.set("propertyType", newFilters.propertyType);
+    if (newFilters.propertyType)
+      newSearchParams.set("propertyType", newFilters.propertyType);
     if (newFilters.city) newSearchParams.set("city", newFilters.city);
-    if (newFilters.bedrooms) newSearchParams.set("bedrooms", newFilters.bedrooms);
-    if (newFilters.searchTerm) newSearchParams.set("search", newFilters.searchTerm);
+    if (newFilters.bedrooms)
+      newSearchParams.set("bedrooms", newFilters.bedrooms);
+    if (newFilters.searchTerm)
+      newSearchParams.set("search", newFilters.searchTerm);
 
-    if (newFilters.rentRange[0] > 0) newSearchParams.set("minRent", newFilters.rentRange[0]);
-    if (newFilters.rentRange[1] < 500000) newSearchParams.set("maxRent", newFilters.rentRange[1]);
+    if (newFilters.rentRange[0] > 0)
+      newSearchParams.set("minRent", newFilters.rentRange[0]);
+    if (newFilters.rentRange[1] < 500000)
+      newSearchParams.set("maxRent", newFilters.rentRange[1]);
 
-    if (newFilters.budgetRange[0] > 0) newSearchParams.set("minBudget", newFilters.budgetRange[0]);
-    if (newFilters.budgetRange[1] < 30000000) newSearchParams.set("maxBudget", newFilters.budgetRange[1]);
+    if (newFilters.budgetRange[0] > 0)
+      newSearchParams.set("minBudget", newFilters.budgetRange[0]);
 
-    if (newFilters.amenities && newFilters.amenities.length > 0) newSearchParams.set("amenities", newFilters.amenities.join(","));
+    if (newFilters.amenities && newFilters.amenities.length > 0)
+      newSearchParams.set("amenities", newFilters.amenities.join(","));
     if (newFilters.title) newSearchParams.set("title", newFilters.title);
-    if (newFilters.status && newFilters.status !== "All") newSearchParams.set("status", newFilters.status);
+    if (newFilters.status && newFilters.status !== "All")
+      newSearchParams.set("status", newFilters.status);
 
     setSearchParams(newSearchParams);
   };
@@ -332,7 +377,7 @@ const PropertiesPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const currentFilters = {
+  const currentFilters = React.useMemo(() => ({
     propertyType: filters.propertyType,
     city: filters.city,
     bedrooms: filters.bedrooms,
@@ -341,26 +386,68 @@ const PropertiesPage = () => {
     title: filters.title,
     budgetRange: filters.budgetRange,
     rentRange: filters.rentRange,
-    status: filters.status
-  };
+    status: filters.status,
+  }), [filters.propertyType, filters.city, filters.bedrooms, filters.searchTerm, filters.amenities, filters.title, filters.budgetRange, filters.rentRange, filters.status]);
 
   // Get active filters for display
   const getActiveFilters = () => {
     const active = [];
-    if (filters.propertyType) active.push({ key: 'propertyType', label: 'Property Type', value: filters.propertyType });
-    if (filters.city) active.push({ key: 'city', label: 'City', value: filters.city });
-    if (filters.bedrooms) active.push({ key: 'bedrooms', label: 'Bedrooms', value: `${filters.bedrooms} BHK` });
-    if (filters.searchTerm) active.push({ key: 'search', label: 'Search', value: filters.searchTerm });
-    if (filters.amenities && filters.amenities.length > 0) active.push({ key: 'amenities', label: 'amenities', value: filters.amenities.join(", ") });
-    if (filters.title) active.push({ key: 'title', label: 'title', value: filters.title });
+    if (filters.propertyType)
+      active.push({
+        key: "propertyType",
+        label: "Property Type",
+        value: filters.propertyType,
+      });
+    if (filters.city)
+      active.push({ key: "city", label: "City", value: filters.city });
+    if (filters.bedrooms)
+      active.push({
+        key: "bedrooms",
+        label: "Bedrooms",
+        value: `${filters.bedrooms} BHK`,
+      });
+    if (filters.searchTerm)
+      active.push({
+        key: "search",
+        label: "Search",
+        value: filters.searchTerm,
+      });
+    if (filters.amenities && filters.amenities.length > 0)
+      active.push({
+        key: "amenities",
+        label: "Amenities",
+        value: filters.amenities.join(", "),
+      });
+    if (filters.title)
+      active.push({ key: "title", label: "Title", value: filters.title });
 
     if (filters.rentRange[0] > 0 || filters.rentRange[1] < 500000) {
-      active.push({ key: 'rent', label: 'Rent Range', value: `₹${filters.rentRange[0].toLocaleString()} - ₹${filters.rentRange[1].toLocaleString()}` });
+      active.push({
+        key: "rent",
+        label: "Rent Range",
+        value: `₹${filters.rentRange[0].toLocaleString()} - ₹${filters.rentRange[1].toLocaleString()}`,
+      });
     }
     if (filters.budgetRange[0] > 0 || filters.budgetRange[1] < 30000000) {
-      active.push({ key: 'budget', label: 'Budget Range', value: `₹${filters.budgetRange[0].toLocaleString()} - ₹${filters.budgetRange[1].toLocaleString()}` });
+      active.push({
+        key: "budget",
+        label: "Budget Range",
+        value: `₹${filters.budgetRange[0].toLocaleString()} - ₹${filters.budgetRange[1].toLocaleString()}`,
+      });
     }
-    if (filters.status && filters.status !== "All") active.push({ key: 'status', label: 'status', value: filters.status });
+    if (filters.status && filters.status !== "All") {
+      const statusLabels = {
+        rent: "For Rent",
+        sell: "For Sale",
+        lease: "For Lease",
+        commercial: "For Commercial",
+      };
+      active.push({
+        key: "status",
+        label: "Status",
+        value: statusLabels[filters.status] || filters.status,
+      });
+    }
     return active;
   };
 
@@ -374,24 +461,24 @@ const PropertiesPage = () => {
       title: "",
       budgetRange: [0, 30000000],
       rentRange: [0, 500000],
-      status: "All"
+      status: "All",
     });
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', py: 4 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "grey.50", py: 4 }}>
       <Container maxWidth="xl">
         {/* Page Header */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
           <Typography
             variant="h3"
             component="h1"
             sx={{
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 2
+              background: "linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 2,
             }}
           >
             Properties
@@ -404,9 +491,27 @@ const PropertiesPage = () => {
         </Box>
 
         {getActiveFilters().length > 0 && (
-          <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.50', position: 'sticky', top: 0, zIndex: 10 }}>
-            <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
-              <Typography variant="subtitle2" color="primary.main" fontWeight={600}>
+          <Paper
+            sx={{
+              p: 2,
+              mb: 3,
+              bgcolor: "primary.50",
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={2}
+              flexWrap="wrap"
+            >
+              <Typography
+                variant="subtitle2"
+                color="primary.main"
+                fontWeight={600}
+              >
                 Active Filters:
               </Typography>
               {getActiveFilters().map((filter) => (
@@ -421,15 +526,13 @@ const PropertiesPage = () => {
               <Button
                 size="small"
                 onClick={clearAllFilters}
-                sx={{ ml: 'auto' }}
+                sx={{ ml: "auto" }}
               >
                 Clear All
               </Button>
             </Stack>
           </Paper>
         )}
-
-
 
         <Grid container spacing={2} sx={{ mt: 2, display: "flex" }}>
           {/* Sidebar */}
@@ -447,10 +550,8 @@ const PropertiesPage = () => {
                   display: "block", // show desktop filter only above 1276px
                 },
               },
-
-
             }}
-          // show only ≥1200px
+            // show only ≥1200px
           >
             <Paper
               elevation={3}
@@ -467,10 +568,11 @@ const PropertiesPage = () => {
                   city: "",
                   bedrooms: "",
                   search: "",
-                  budgetRange: [0, 100000],
-                  rentRange: [0, 50000],
-                  amenities: [""],
+                  budgetRange: [0, 30000000],
+                  rentRange: [0, 500000],
+                  amenities: [],
                   title: "",
+                  status: filters.status,
                 }}
                 currentFilters={currentFilters}
                 onSearch={handleFilterSearch}
@@ -480,30 +582,50 @@ const PropertiesPage = () => {
 
           {/* Active Filters Display */}
           {/* Properties List */}
-          <Grid item xs={12} md={6} sx={{
-            maxWidth: {
-              xs: "100%",
-              md: "100%",
-              "@media (min-width:1200px) and (max-width:1275px)": "100%",
-              lg: "70%",
-            },
+          <Grid
+            item
+            xs={12}
+            md={6}
+            sx={{
+              maxWidth: {
+                xs: "100%",
+                md: "100%",
+                "@media (min-width:1200px) and (max-width:1275px)": "100%",
+                lg: "70%",
+              },
 
-            width: "100%",
-            "@media (max-width:1275px)": {
-              maxWidth: "100%",
-            },
-          }} width={"100%"}>
-            <Box sx={{ mt: 3, gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', }}>
+              width: "100%",
+              "@media (max-width:1275px)": {
+                maxWidth: "100%",
+              },
+            }}
+            width={"100%"}
+          >
+            <Box
+              sx={{
+                mt: 3,
+                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+              }}
+            >
               {loading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    py: 8,
+                  }}
+                >
                   <CircularProgress size={60} sx={{ mb: 2 }} />
                   <Typography variant="h6" color="text.secondary">
                     Loading properties...
                   </Typography>
                 </Box>
               ) : error ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                  <WarningIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+                <Paper sx={{ p: 4, textAlign: "center" }}>
+                  <WarningIcon
+                    sx={{ fontSize: 60, color: "error.main", mb: 2 }}
+                  />
                   <Typography variant="h5" color="error.main" gutterBottom>
                     Something went wrong
                   </Typography>
@@ -519,12 +641,22 @@ const PropertiesPage = () => {
                   </Button>
                 </Paper>
               ) : properties.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                  <HomeIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.6 }} />
+                <Paper sx={{ p: 4, textAlign: "center" }}>
+                  <HomeIcon
+                    sx={{
+                      fontSize: 80,
+                      color: "text.secondary",
+                      mb: 2,
+                      opacity: 0.6,
+                    }}
+                  />
                   <Typography variant="h5" gutterBottom>
                     No properties found
                   </Typography>
-                  <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ mb: 3, maxWidth: 600, mx: "auto" }}
+                  >
                     We couldn't find any properties matching your criteria. Try
                     adjusting your filters or search terms to see more results.
                   </Typography>
@@ -542,16 +674,16 @@ const PropertiesPage = () => {
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(310px, 1fr))",
                       gap: 3,
                       mb: 4,
                       justifyContent: "center",
                       justifyItems: "center",
                       mx: "auto",
-                      ml: { xs: 0, md: 4, lg: 6 }
+                      ml: { xs: 0, md: 4, lg: 6 },
                     }}
                   >
-
                     {/*{properties.map((property, index) => (
         <React.Fragment key={property.id}>
           <PropertyCard
@@ -573,15 +705,17 @@ const PropertiesPage = () => {
                         <PropertyCard
                           property={property}
                           isInWishlist={wishlist.includes(property.id)}
-                          onWishlistToggle={() => handleWishlistToggle(property.id)}
+                          onWishlistToggle={() =>
+                            handleWishlistToggle(property.id)
+                          }
                           onClick={() => handlePropertyClick(property)}
                           onLoginRequired={handleLoginRequired}
                           isAuthenticated={isAuthenticated}
-                          postType={property?.listingType ?? "Rent"}
+                          postType={property?.listingType ?? "rent"}
                         />
                         {/* Insert banner after the 2nd card (index === 1) */}
                         {index === 1 && (
-                          <Box >
+                          <Box>
                             <img
                               src={BannerImg}
                               alt="Property Banner"
@@ -598,7 +732,9 @@ const PropertiesPage = () => {
                   </Box>
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", mb: 3 }}
+                    >
                       <Pagination
                         count={totalPages}
                         page={page}
@@ -608,7 +744,7 @@ const PropertiesPage = () => {
                         showFirstButton
                         showLastButton
                         sx={{
-                          '& .MuiPaginationItem-root': {
+                          "& .MuiPaginationItem-root": {
                             fontWeight: 600,
                           },
                         }}
@@ -618,9 +754,10 @@ const PropertiesPage = () => {
 
                   {/* Results Info */}
                   <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ textAlign: 'center' }}>
+                  <Box sx={{ textAlign: "center" }}>
                     <Typography variant="body2" color="text.secondary">
-                      Showing {properties.length} of {totalProperties} properties
+                      Showing {properties.length} of {totalProperties}{" "}
+                      properties
                       {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
                     </Typography>
                   </Box>
@@ -634,7 +771,7 @@ const PropertiesPage = () => {
       {/* Floating Filter Button (Mobile Only) */}
       <Box
         sx={{
-          position: 'fixed',
+          position: "fixed",
           top: 100,
           left: 15,
           zIndex: 2000,
@@ -642,14 +779,11 @@ const PropertiesPage = () => {
             xs: "flex",
             lg: "none",
             "@media (min-width:1200px) and (max-width:1275px)": {
-              display: "flex"
-            }
-
-          }
-
+              display: "flex",
+            },
+          },
         }}
       >
-
         <Box
           sx={{
             position: "fixed",
@@ -660,12 +794,11 @@ const PropertiesPage = () => {
               xs: mobileFilterOpen ? "none" : "flex",
               sm: mobileFilterOpen ? "none" : "flex",
               md: mobileFilterOpen ? "none" : "flex",
-              lg: mobileFilterOpen ? "none" : "flex",   // 1200–1275 also visible
+              lg: mobileFilterOpen ? "none" : "flex", // 1200–1275 also visible
               "@media (min-width:1276px)": {
-                display: "none",                        // Hide only after 1276px
+                display: "none", // Hide only after 1276px
               },
             },
-
           }}
         >
           <button
@@ -687,8 +820,6 @@ const PropertiesPage = () => {
             ☰
           </button>
         </Box>
-
-
       </Box>
 
       <Drawer
@@ -704,22 +835,21 @@ const PropertiesPage = () => {
             maxWidth: "400px",
           },
         }}
-
         // ✅ This allows dropdowns to render in portals outside the drawer
         ModalProps={{
           keepMounted: true, // Better mobile performance
         }}
       >
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
           {/* Header with close button */}
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               p: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
+              borderBottom: "1px solid",
+              borderColor: "divider",
             }}
           >
             <Typography variant="h6" fontWeight={600}>
@@ -738,7 +868,7 @@ const PropertiesPage = () => {
           <Box
             sx={{
               flex: 1,
-              overflowY: 'auto',
+              overflowY: "auto",
               p: 2,
             }}
           >
@@ -755,17 +885,16 @@ const PropertiesPage = () => {
               }}
               currentFilters={currentFilters}
               onSearch={handleFilterSearch}
-            // onSearch={(data) => {
-            //   console.log(data);
+              // onSearch={(data) => {
+              //   console.log(data);
 
-            //   handleFilterSearch(data);
-            //   setMobileFilterOpen(false);
-            // }}
+              //   handleFilterSearch(data);
+              //   setMobileFilterOpen(false);
+              // }}
             />
           </Box>
         </Box>
       </Drawer>
-
 
       {/* Modals */}
       {showAuthPrompt && <AuthPromptModal onClose={handleCloseModals} />}

@@ -83,7 +83,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
   "& .MuiOutlinedInput-root": {
     borderRadius: "6px",
     backgroundColor: "#ffffff",
@@ -133,6 +133,7 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
       case "rent":
         return 1;
       case "sale":
+      case "sell": // Backend uses 'sell'
         return 2;
       case "lease":
         return 3;
@@ -154,11 +155,14 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
 
   useEffect(() => {
     if (!isInitialMount.current && Object.keys(currentFilters).length > 0) {
+      console.log("PropertyFilter: Syncing currentFilters", currentFilters);
       setFilters((prev) => ({
         ...prev,
         ...currentFilters,
       }));
-      setStatusTab(getStatusTabIndex(currentFilters.status));
+      const newTabIndex = getStatusTabIndex(currentFilters.status);
+      console.log("PropertyFilter: Setting tab index to", newTabIndex, "for status", currentFilters.status);
+      setStatusTab(newTabIndex);
     }
   }, [currentFilters]);
 
@@ -170,7 +174,7 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
       }
     }, 500);
     return () => clearTimeout(delay);
-  }, [filters.search]);
+  }, );
 
   const handleChange = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -178,14 +182,21 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
 
   const handleTabChange = (event, newValue) => {
     setStatusTab(newValue);
-    const statusMap = ["All", "rent", "sale", "lease", "commercial"];
-    setFilters((prev) => ({ ...prev, status: statusMap[newValue] }));
+    // Backend expects 'sell' not 'sale'
+    const statusMap = ["All", "rent", "sell", "lease", "commercial"];
+    const newStatus = statusMap[newValue];
+    setFilters((prev) => ({ ...prev, status: newStatus }));
   };
 
   const handleSearchClick = () => {
     const params = new URLSearchParams();
 
-    if (filters.status) params.append("status", filters.status);
+    console.log("PropertyFilter: handleSearchClick called with filters", filters);
+
+    // Map status to listingType for backend compatibility
+    if (filters.status && filters.status !== "All") {
+      params.append("listingType", filters.status);
+    }
     if (filters.propertyType) params.append("propertyType", filters.propertyType);
     if (filters.city) params.append("city", filters.city);
     if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
@@ -194,8 +205,9 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
 
     lastSearchRef.current = filters.search;
 
+    console.log("PropertyFilter: Calling onSearch with params:", params.toString());
+    console.log("PropertyFilter: Calling onSearch with filters:", filters);
     onSearch(params.toString(), filters);
-    console.log(params.toString(), "Search Params");
   };
 
   return (

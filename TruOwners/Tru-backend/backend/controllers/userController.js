@@ -35,13 +35,57 @@ const getAllProperties = async (req, res) => {
     }
 
     // Build filter query
-    let status = req.query.status || PROPERTY_STATUS.PUBLISHED;
-    if (status === "All") {
-      status = PROPERTY_STATUS.PUBLISHED;
-    }
-    const filterQuery = { status };
+    const filterQuery = {};
 
-    // Rent filters (range)
+    // Always filter by published/approved properties
+    filterQuery.status = {
+      $in: [PROPERTY_STATUS.APPROVED, PROPERTY_STATUS.PUBLISHED],
+    };
+    // Budget filter - applies to rent OR price based on listing type
+    if (req.query.maxBudget || req.query.minBudget) {
+      const listingType = req.query.listingType;
+
+      // For rent/commercial listings, filter by rent field
+      if (listingType === 'rent' || listingType === 'commercial') {
+        filterQuery.rent = {};
+        if (req.query.minBudget) {
+          filterQuery.rent.$gte = parseInt(req.query.minBudget);
+        }
+        if (req.query.maxBudget) {
+          filterQuery.rent.$lte = parseInt(req.query.maxBudget);
+        }
+      }
+      // For sell/lease listings, filter by price field
+      else if (listingType === 'sell' || listingType === 'lease') {
+        filterQuery.price = {};
+        if (req.query.minBudget) {
+          filterQuery.price.$gte = parseInt(req.query.minBudget);
+        }
+        if (req.query.maxBudget) {
+          filterQuery.price.$lte = parseInt(req.query.maxBudget);
+        }
+      }
+      // If no listing type specified, apply to both rent and price
+      else {
+        const budgetFilter = {};
+        if (req.query.minBudget) {
+          budgetFilter.$gte = parseInt(req.query.minBudget);
+        }
+        if (req.query.maxBudget) {
+          budgetFilter.$lte = parseInt(req.query.maxBudget);
+        }
+        // Use $or to match either rent or price
+        if (!filterQuery.$or) {
+          filterQuery.$or = [];
+        }
+        filterQuery.$or.push(
+          { rent: budgetFilter },
+          { price: budgetFilter }
+        );
+      }
+    }
+
+    // Separate rent range filter (for backward compatibility)
     if (req.query.minRent || req.query.maxRent) {
       filterQuery.rent = {};
       if (req.query.minRent) {
@@ -52,32 +96,20 @@ const getAllProperties = async (req, res) => {
       }
     }
 
-    // Deposit/Budget filters (range)
-    if (
-      req.query.minBudget ||
-      req.query.maxBudget ||
-      req.query.minDeposit ||
-      req.query.maxDeposit
-    ) {
-      filterQuery.deposit = {};
-      const min = req.query.minBudget || req.query.minDeposit;
-      const max = req.query.maxBudget || req.query.maxDeposit;
-      if (min) {
-        filterQuery.deposit.$gte = parseInt(min);
-      }
-      if (max) {
-        filterQuery.deposit.$lte = parseInt(max);
-      }
+    // Listing type filter (rent/sell/lease/commercial)
+    if (req.query.listingType) {
+      filterQuery.listingType = req.query.listingType;
     }
 
     // Property type filter
     if (req.query.propertyType) {
       filterQuery.propertyType = req.query.propertyType;
     }
-
     // Bedrooms filter
     if (req.query.bedrooms) {
-      filterQuery.bedrooms = parseInt(req.query.bedrooms);
+      filterQuery.bedrooms = {
+        $in: [Number(req.query.bedrooms), req.query.bedrooms],
+      };
     }
 
     // Bathrooms filter
@@ -182,12 +214,20 @@ const getAllProperties = async (req, res) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    // Fetch properties with filters, pagination, and sorting
+    // Debug log (add RIGHT BEFORE: const properties = await Property.find...)
+    console.log("=== DEBUG FILTER ===");
+    console.log("Query params:", req.query);
+    console.log("Final filterQuery:", JSON.stringify(filterQuery, null, 2));
+    console.log("==================");
+
+    // ✅ ACTUAL DATABASE QUERY
     const properties = await Property.find(filterQuery)
       .populate("owner")
       .sort(sortQuery)
       .skip(skip)
       .limit(limit);
+
+    console.log("Properties found:", properties.length);
 
     res.status(200).json({
       statusCode: 200,
@@ -213,10 +253,10 @@ const getAllProperties = async (req, res) => {
           status: property.status,
           owner: property.owner
             ? {
-                id: property.owner._id,
-                name: property.owner.name,
-                phone: property.owner.phone,
-              }
+              id: property.owner._id,
+              name: property.owner.name,
+              phone: property.owner.phone,
+            }
             : null,
           createdAt: property.createdAt,
           updatedAt: property.updatedAt,
@@ -233,8 +273,10 @@ const getAllProperties = async (req, res) => {
           prevPage: hasPrevPage ? page - 1 : null,
         },
         appliedFilters: {
+          listingType: req.query.listingType || null,
           minRent: req.query.minRent || null,
           maxRent: req.query.maxRent || null,
+          maxBudget: req.query.maxBudget || null,
           minDeposit: req.query.minDeposit || null,
           maxDeposit: req.query.maxDeposit || null,
           propertyType: req.query.propertyType || null,
@@ -728,34 +770,34 @@ const getUserWishlist = async (req, res) => {
 
     const wishlistData = wishlist
       ? {
-          id: wishlist._id,
-          user: wishlist.user,
-          properties: wishlist.properties.map((property) => ({
-            id: property._id,
-            title: property.title,
-            description: property.description,
-            location: property.location,
-            rent: property.rent,
-            deposit: property.deposit,
-            listingType: property.listingType,
-            price: property.price,
-            propertyType: property.propertyType,
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            area: property.area,
-            amenities: property.amenities,
-            images: property.images,
-            status: property.status,
-            createdAt: property.createdAt,
-          })),
-          totalItems: wishlist.properties.length,
-          createdAt: wishlist.createdAt,
-          updatedAt: wishlist.updatedAt,
-        }
+        id: wishlist._id,
+        user: wishlist.user,
+        properties: wishlist.properties.map((property) => ({
+          id: property._id,
+          title: property.title,
+          description: property.description,
+          location: property.location,
+          rent: property.rent,
+          deposit: property.deposit,
+          listingType: property.listingType,
+          price: property.price,
+          propertyType: property.propertyType,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          area: property.area,
+          amenities: property.amenities,
+          images: property.images,
+          status: property.status,
+          createdAt: property.createdAt,
+        })),
+        totalItems: wishlist.properties.length,
+        createdAt: wishlist.createdAt,
+        updatedAt: wishlist.updatedAt,
+      }
       : {
-          properties: [],
-          totalItems: 0,
-        };
+        properties: [],
+        totalItems: 0,
+      };
 
     res.status(200).json({
       statusCode: 200,
