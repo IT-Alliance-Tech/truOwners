@@ -14,7 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(true) // Add loading state for initial check
+  const [isSubscribed, setIsSubscribed] = useState(false) // NEW: Track subscription status
+  const [loading, setLoading] = useState(true)
 
   // Initialize auth state from localStorage on component mount
   useEffect(() => {
@@ -37,7 +38,19 @@ export const AuthProvider = ({ children }) => {
           setUser(parsedUser)
           setIsAuthenticated(true)
           
+          // NEW: Check subscription status from user data
+          // You can check any of these fields based on your backend structure
+          const subscriptionStatus = 
+            parsedUser.isSubscribed || 
+            parsedUser.isPremium || 
+            parsedUser.subscriptionPlan === 'premium' ||
+            parsedUser.subscription?.active === true ||
+            false // Default to false if no subscription info
+          
+          setIsSubscribed(subscriptionStatus)
+          
           console.log('Auth restored from localStorage')
+          console.log('Subscription status:', subscriptionStatus)
         } else {
           // Invalid token format, clear storage
           clearAuthData()
@@ -50,14 +63,12 @@ export const AuthProvider = ({ children }) => {
       console.error('Error initializing auth:', error)
       clearAuthData()
     } finally {
-      setLoading(false) // Always set loading to false
+      setLoading(false)
     }
   }
 
   // Basic token format validation
   const isValidTokenFormat = (token) => {
-    // Check if token looks like a JWT (has 3 parts separated by dots)
-    // Or implement your own token validation logic
     return token && typeof token === 'string' && token.split('.').length === 3
   }
 
@@ -68,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null)
     setUser(null)
     setIsAuthenticated(false)
+    setIsSubscribed(false) // NEW: Clear subscription status
   }
 
   // Login function
@@ -87,7 +99,18 @@ export const AuthProvider = ({ children }) => {
       setToken(authToken)
       setIsAuthenticated(true)
       
+      // NEW: Set subscription status on login
+      const subscriptionStatus = 
+        userData.isSubscribed || 
+        userData.isPremium || 
+        userData.subscriptionPlan === 'premium' ||
+        userData.subscription?.active === true ||
+        false
+      
+      setIsSubscribed(subscriptionStatus)
+      
       console.log('Login successful, data stored')
+      console.log('Subscription status:', subscriptionStatus)
     } catch (error) {
       console.error('Login error:', error)
       throw error
@@ -99,9 +122,6 @@ export const AuthProvider = ({ children }) => {
     try {
       clearAuthData()
       console.log('Logout successful')
-      
-      // Optional: Redirect to home page
-      // window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)
     }
@@ -113,18 +133,52 @@ export const AuthProvider = ({ children }) => {
       const updatedUser = { ...user, ...newUserData }
       localStorage.setItem('authUser', JSON.stringify(updatedUser))
       setUser(updatedUser)
+      
+      // NEW: Update subscription status if it changed
+      if (newUserData.isSubscribed !== undefined || 
+          newUserData.isPremium !== undefined ||
+          newUserData.subscriptionPlan !== undefined ||
+          newUserData.subscription !== undefined) {
+        const subscriptionStatus = 
+          updatedUser.isSubscribed || 
+          updatedUser.isPremium || 
+          updatedUser.subscriptionPlan === 'premium' ||
+          updatedUser.subscription?.active === true ||
+          false
+        
+        setIsSubscribed(subscriptionStatus)
+        console.log('Subscription status updated:', subscriptionStatus)
+      }
+      
       console.log('User data updated')
     } catch (error) {
       console.error('Update user error:', error)
     }
   }
 
-  // Check if token is expired (implement based on your token structure)
+  // NEW: Function to update subscription status
+  const updateSubscription = (subscriptionStatus) => {
+    try {
+      setIsSubscribed(subscriptionStatus)
+      
+      // Also update in user object and localStorage
+      if (user) {
+        const updatedUser = { ...user, isSubscribed: subscriptionStatus }
+        localStorage.setItem('authUser', JSON.stringify(updatedUser))
+        setUser(updatedUser)
+      }
+      
+      console.log('Subscription status updated:', subscriptionStatus)
+    } catch (error) {
+      console.error('Update subscription error:', error)
+    }
+  }
+
+  // Check if token is expired
   const isTokenExpired = () => {
     if (!token) return true
     
     try {
-      // For JWT tokens, decode and check expiration
       const payload = JSON.parse(atob(token.split('.')[1]))
       const currentTime = Date.now() / 1000
       
@@ -154,10 +208,12 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     isAuthenticated,
+    isSubscribed, // NEW: Expose subscription status
     loading,
     login,
     logout,
     updateUser,
+    updateSubscription, // NEW: Expose subscription update function
     validateSession,
     isTokenExpired
   }

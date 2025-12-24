@@ -163,7 +163,7 @@ const PropertyFilters = ({
     handleFilterChange("minBudget", newValue[0]);
     handleFilterChange("maxBudget", newValue[1]);
   };
-
+  
   // const handlePriceRangeChange = (event, newValue) => {
   //   setPriceRange(newValue);
   //   handleFilterChange("priceRange", { min: newValue[0], max: newValue[1] });

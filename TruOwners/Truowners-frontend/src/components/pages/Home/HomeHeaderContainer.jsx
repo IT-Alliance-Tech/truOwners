@@ -88,7 +88,7 @@ const HomeHeaderContainer = () => {
       if (filters.searchTerm) params.append("search", filters.searchTerm);
       if (filters.maxBudget) params.append("maxBudget", filters.maxBudget);
 
-      console.log(params.toString(), "params");
+      console.log("Fetching with params:", params.toString());
 
       const response = await fetch(
         `${buildApiUrl(API_CONFIG.USER.PROPERTIES)}?${params.toString()}`,
@@ -111,7 +111,9 @@ const HomeHeaderContainer = () => {
       }
 
       if (data.success) {
-        setProperties(data.data.properties || []);
+        const fetchedProperties = data.data.properties || [];
+        console.log("Fetched properties:", fetchedProperties);
+        setProperties(fetchedProperties);
       }
     } catch (err) {
       console.error("Fetch properties error:", err);
@@ -203,8 +205,11 @@ const HomeHeaderContainer = () => {
   };
 
   const applyFilters = () => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    console.log("Applying frontend filters, searchTerm:", searchTerm);
+    console.log("Total properties before filter:", properties.length);
+    
+    if (searchTerm && searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase().trim();
       const filtered = properties.filter((property) => {
         const titleMatch = property.title?.toLowerCase().includes(searchLower);
         const descMatch = property.description
@@ -215,8 +220,10 @@ const HomeHeaderContainer = () => {
           .includes(searchLower);
         return titleMatch || descMatch || locationMatch;
       });
+      console.log("Filtered properties:", filtered.length);
       setFilteredProperties(filtered);
     } else {
+      console.log("No search term, showing all properties");
       setFilteredProperties(properties);
     }
   };
@@ -224,6 +231,10 @@ const HomeHeaderContainer = () => {
   const getLocationString = (location) => {
     if (typeof location === "string") return location;
     if (location && typeof location === "object") {
+      // Prioritize city first
+      if (location.city) {
+        return location.state ? `${location.city}, ${location.state}` : location.city;
+      }
       if (location.address) return location.address;
       if (location.street) return location.street;
       if (location.city && location.state)
@@ -297,6 +308,7 @@ const HomeHeaderContainer = () => {
               }}
               currentFilters={filters}
               onSearch={(queryString, updatedFilters) => {
+                console.log("Filter updated:", updatedFilters);
                 setFilters({
                   ...filters,
                   status: updatedFilters.status,
@@ -306,7 +318,7 @@ const HomeHeaderContainer = () => {
                   bedrooms: updatedFilters.bedrooms,
                   searchTerm: updatedFilters.search,
                   rentRange: updatedFilters.rentRange,
-                  maxBudget: updatedFilters.maxBudget,
+                  maxBudget: updatedFilters.maxBudget || "",
                 });
               }}
             />
@@ -345,8 +357,6 @@ const HomeHeaderContainer = () => {
             </button>
           </div>
         ) : (
-          // your list…
-
           <div className="properties-grid">
             {filteredProperties.slice(0, 6).map((property, index) => (
               <motion.div
