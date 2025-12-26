@@ -52,6 +52,7 @@ const PrivacyPolicy = () => {
           <li>Authorized payment gateway providers for transaction processing.</li>
           <li>Trusted service providers assisting with hosting, analytics, or communication.</li>
           <li>Legal or regulatory authorities when required by law.</li>
+          <li>Truowner is not responsible for title, listed properties</li>
         </ul>
 
         <h2 className="padd">Data Security</h2>

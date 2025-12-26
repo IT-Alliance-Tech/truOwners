@@ -84,7 +84,6 @@ const EditProperty = ({ property, onClose, onSuccess, onComplete }) => {
         bedrooms: property.bedrooms || '',
         bathrooms: property.bathrooms || '',
         area: property.area || '',
-        area: property.area || '',
         amenities: property.amenities || [],
         // Owner Details Prefill
         ownerPhone: property.ownerDetails?.phone || '',
@@ -439,8 +438,6 @@ const EditProperty = ({ property, onClose, onSuccess, onComplete }) => {
           propertyType: formData.propertyType,
           bedrooms: parseInt(formData.bedrooms),
           bathrooms: parseInt(formData.bathrooms),
-          area: parseInt(formData.area),
-          amenities: formData.amenities,
           area: parseInt(formData.area),
           amenities: formData.amenities,
           images: allMediaUrls,

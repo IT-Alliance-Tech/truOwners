@@ -42,6 +42,7 @@ const PropertiesPage = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAuthenticated, token } = useAuth();
+  const hasAutoOpened = React.useRef(false);
 
   // State management
   const [properties, setProperties] = useState([]);
@@ -59,9 +60,8 @@ const PropertiesPage = () => {
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     
-    // If we have a budget/rent in URL, use it as the upper bound for both or specifically
-    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
-    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+    const initialRentMax = rawMaxRent || 500000;
+    const initialBudgetMax = rawMaxBudget || 30000000;
 
     return {
       propertyType: searchParams.get("propertyType") || "",
@@ -103,8 +103,8 @@ const PropertiesPage = () => {
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     
-    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
-    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+    const initialRentMax = rawMaxRent || 500000;
+    const initialBudgetMax = rawMaxBudget || 30000000;
 
     const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
@@ -131,6 +131,15 @@ const PropertiesPage = () => {
 
     setFilters(updatedFilters);
     setPage(parseInt(searchParams.get("page")) || 1);
+
+    // Auto-open filter drawer 
+    const hasFilters = Array.from(searchParams.keys()).some(key => 
+      ["status", "city", "propertyType", "bedrooms", "search"].includes(key)
+    );
+    if (hasFilters && !hasAutoOpened.current) {
+      setMobileFilterOpen(true);
+      hasAutoOpened.current = true;
+    }
   }, [searchParams]);
 
   // Fetch properties whenever filters or page changes
@@ -215,7 +224,6 @@ const PropertiesPage = () => {
       } else {
         throw new Error(getErrorMessage(data));
       }
-      setMobileFilterOpen(false);
     } catch (err) {
       if (err.name === "AbortError") return;
       console.error("Fetch properties error:", err);
@@ -363,6 +371,7 @@ const PropertiesPage = () => {
       newSearchParams.set("status", newFilters.status);
 
     setSearchParams(newSearchParams);
+    setMobileFilterOpen(false); // Close drawer after searching from within sidebar
   };
 
   const handlePageChange = (event, newPage) => {
@@ -534,7 +543,7 @@ const PropertiesPage = () => {
           </Paper>
         )}
 
-        <Grid container spacing={2} sx={{ mt: 2, display: "flex" }}>
+        <Grid container spacing={1} sx={{ mt: 2, display: "flex" }}>
           {/* Sidebar */}
           <Grid
             item
@@ -675,7 +684,7 @@ const PropertiesPage = () => {
                     sx={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(310px, 1fr))",
+                        "repeat(auto-fill, minmax(300px, 1fr))",
                       gap: 3,
                       mb: 4,
                       justifyContent: "center",

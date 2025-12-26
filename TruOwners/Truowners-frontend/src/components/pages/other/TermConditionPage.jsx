@@ -184,6 +184,7 @@ const TermConditionPage = () => {
     The singular includes the plural and vice versa and words importing a
     particular gender include all genders.
   </li>
+  <li>Truowner is not responsible for title, listed properties</li>
   <li>
     The words "other" or “otherwise” and “whatsoever” will not be construed
     ejusdem generis or be construed as any limitation upon the generality of any
