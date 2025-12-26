@@ -48,10 +48,10 @@ const defaultFilters = {
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   "& .MuiTabs-flexContainer": {
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "spaceevenly",
     width: "100%",
     [theme.breakpoints.down(992)]: {
-      justifyContent: "center",
+      justifyContent: "spaceevenly",
       alignItems: "center",
     },
   },
@@ -64,7 +64,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minWidth: "160px",
   fontWeight: "700",
   textTransform: "uppercase",
-  fontSize: "14px",
+  fontSize: "12px",
   borderRadius: "12px 12px 0 0",
   color: theme.palette.text.secondary,
   backgroundColor: "#f8f9fa",
@@ -87,9 +87,10 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     borderRadius: "6px",
     backgroundColor: "#ffffff",
     transition: "all 0.3s ease",
+    fontSize: "12px",
     width: "100%",
     height: "40px",
-    maxWidth: "170px",
+    maxWidth: "120px",
     [theme.breakpoints.down("lg")]: {
        maxWidth: "100%", 
     },
@@ -106,6 +107,7 @@ const StyledButton = styled(Button)(() => ({
   fontSize: "14px",
   height: "40px",
   borderRadius: "12px",
+  justifyContent: "center",
   "&:hover": {
     backgroundColor: "#1565c0",
   },
@@ -227,7 +229,6 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         allowScrollButtonsMobile={false}
         sx={{ width: "100%" }}
       >
-        <StyledTab label="ALL STATUS" sx={{ display: { xs: "none", sm: "inline-flex" } }} />
         <StyledTab label="RENT" />
         <StyledTab label="SALE" />
         <StyledTab label="LEASE" sx={{ display: { xs: "none", sm: "inline-flex" } }} />
@@ -240,8 +241,8 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         spacing={2}
         sx={{
           p: { xs: 2, lg: 4 },
-          justifyContent: "center",
-          alignItems: "end",
+          justifyContent: "spaceevenly",
+          alignItems: "center",
           backgroundColor: "white",
           borderRadius: "10px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
@@ -251,7 +252,7 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <HomeIcon sx={{ fontSize: 16 }} />
-            LOOKING FOR
+            PROPERTY TYPE
           </SectionLabel>
           <StyledTextField
             select
@@ -297,7 +298,7 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <BedIcon sx={{ fontSize: 16 }} />
-            PROPERTY SIZE
+            BEDROOMS
           </SectionLabel>
           <StyledTextField
             select
@@ -322,9 +323,9 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <BedIcon sx={{ fontSize: 16 }} />
-            YOUR BUDGET
+            BUDGET
           </SectionLabel>
-          <StyledTextField
+          <StyledTextField 
             fullWidth
             value={filters.maxBudget}
             onChange={(e) => handleChange("maxBudget", e.target.value)}
