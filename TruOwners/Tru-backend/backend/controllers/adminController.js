@@ -531,72 +531,6 @@ const updatePropertyStatus = async (req, res) => {
       });
     }
 
-    if (status === PROPERTY_STATUS.PUBLISHED) {
-      const owner = property.owner;
-      const ownerVerified =
-        !!owner && (owner.verified === true || !!owner.user?.verified === true);
-
-      const isFirstTimePublish = property.status === PROPERTY_STATUS.APPROVED;
-
-      if (isFirstTimePublish) {
-        if (!hasOwnerDetails(property)) {
-          return res.status(400).json({
-            statusCode: 400,
-            success: false,
-            error: {
-              message:
-                "First-time publish requires complete owner details and ID proof.",
-            },
-            data: null,
-          });
-        }
-      } else {
-        const allowedPreviousStatuses = [
-          PROPERTY_STATUS.PUBLISHED,
-          PROPERTY_STATUS.SOLD,
-          PROPERTY_STATUS.APPROVED,
-        ];
-        const wasPreviouslyAllowed = allowedPreviousStatuses.includes(
-          property.status
-        );
-
-        if (!ownerVerified && !wasPreviouslyAllowed) {
-          return res.status(400).json({
-            statusCode: 400,
-            success: false,
-            error: {
-              message:
-                "Only approved or previously published properties can be published",
-            },
-            data: null,
-          });
-        }
-
-        if (ownerVerified) {
-          const email = owner.email || owner.user?.email;
-          const phone = owner.phone || owner.user?.phone || owner.mobile;
-          if (!isFilled(email) || !isFilled(phone)) {
-            return res.status(400).json({
-              statusCode: 400,
-              success: false,
-              error: {
-                message: "Owner email/phone must be present for publish",
-              },
-              data: null,
-            });
-          }
-        } else {
-          if (!hasOwnerDetails(property)) {
-            return res.status(400).json({
-              statusCode: 400,
-              success: false,
-              error: { message: "Owner contact information not updated" },
-              data: null,
-            });
-          }
-        }
-      }
-    }
     if (
       status === PROPERTY_STATUS.SOLD &&
       property.status !== PROPERTY_STATUS.PUBLISHED
@@ -608,10 +542,11 @@ const updatePropertyStatus = async (req, res) => {
         data: null,
       });
     }
+
     property.status = status;
     await property.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       statusCode: 200,
       success: true,
       error: null,
@@ -622,7 +557,7 @@ const updatePropertyStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Update property status error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       statusCode: 500,
       success: false,
       error: { message: "Internal server error", details: error.message },
@@ -927,19 +862,18 @@ const getPropertyByIdForAdmin = async (req, res) => {
       });
     }
 
-   return res.status(200).json({
-  statusCode: 200,
-  success: true,
-  error: null,
-  data: {
-    message: "Property retrieved successfully",
-    property: {
-      ...formatAdminProperty(property),
-      owner: formatOwnerWithIdProof(property),
-    },
-  },
-});
-
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      error: null,
+      data: {
+        message: "Property retrieved successfully",
+        property: {
+          ...formatAdminProperty(property),
+          owner: formatOwnerWithIdProof(property),
+        },
+      },
+    });
   } catch (error) {
     console.error("Get property by id for admin error:", error);
     return res.status(500).json({

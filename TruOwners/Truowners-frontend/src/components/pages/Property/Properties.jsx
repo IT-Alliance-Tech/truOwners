@@ -136,7 +136,8 @@ const PropertiesPage = () => {
     const hasFilters = Array.from(searchParams.keys()).some(key => 
       ["status", "city", "propertyType", "bedrooms", "search"].includes(key)
     );
-    if (hasFilters && !hasAutoOpened.current) {
+     const cameFromSearch = searchParams.get("fromSearch") === "true";
+    if (hasFilters || cameFromSearch && !hasAutoOpened.current) {
       setMobileFilterOpen(true);
       hasAutoOpened.current = true;
     }
