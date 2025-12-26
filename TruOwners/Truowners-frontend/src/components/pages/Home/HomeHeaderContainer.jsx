@@ -310,7 +310,8 @@ const HomeHeaderContainer = () => {
               }}
               currentFilters={filters}
                onSearch={(queryString ) => {
-                 navigate(`/properties?${queryString}`);
+                 const params = queryString ? `${queryString}&fromSearch=true` : "fromSearch=true";
+                 navigate(`/properties?${params}`);
                }}
             />
           </div>
