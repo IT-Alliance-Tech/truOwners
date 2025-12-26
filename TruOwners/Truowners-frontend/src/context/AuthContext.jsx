@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { API_CONFIG, buildApiUrl } from '../config/api'
+import { validateApiResponse } from '../utils/errorHandler'
 
 const AuthContext = createContext()
 
@@ -21,6 +23,39 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     initializeAuth()
   }, [])
+
+  // NEW: Proactively fetch subscription status whenever authenticated
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchCurrentSubscription()
+    }
+  }, [isAuthenticated, token])
+
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await fetch(buildApiUrl(API_CONFIG.SUBSCRIPTION.MY_SUBSCRIPTION), {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      if (data.success && data.data) {
+        // Handle both object and boolean status
+        const isSub = !!data.data;
+        setIsSubscribed(isSub)
+        
+        // Update user object in state and localStorage
+        if (user) {
+          const updatedUser = { ...user, isSubscribed: isSub }
+          localStorage.setItem('authUser', JSON.stringify(updatedUser))
+          setUser(updatedUser)
+        }
+        console.log('Proactive subscription check:', isSub)
+      }
+    } catch (error) {
+      console.warn('Failed to proactively fetch subscription:', error)
+    }
+  }
 
   const initializeAuth = () => {
     try {

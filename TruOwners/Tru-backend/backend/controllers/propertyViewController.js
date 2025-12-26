@@ -13,9 +13,9 @@ const viewOwnerDetails = async (req, res) => {
     const subscription = await UserSubscription.findOne({ user: userId, status: 'active' }).populate('plan');
 
     if (!subscription) {
-      return res.status(403).json({ 
-        success: false, 
-        error: { message: 'No active subscription. Please subscribe to view owner details.' } 
+      return res.status(403).json({
+        success: false,
+        error: { message: 'No active subscription. Please subscribe to view owner details.' }
       });
     }
 
@@ -23,25 +23,23 @@ const viewOwnerDetails = async (req, res) => {
     if (new Date() > subscription.endDate) {
       subscription.status = 'expired';
       await subscription.save();
-      return res.status(403).json({ 
-        success: false, 
-        error: { message: 'Subscription expired. Please renew.' } 
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Subscription expired. Please renew.' }
       });
     }
 
     // Helper to construct owner response
     const constructOwnerResponse = (property, ownerProfile) => {
-       const userDetails = ownerProfile && ownerProfile.user ? ownerProfile.user : {};
-       const ownerDetails = property.ownerDetails || {};
-       
-       return {
-          name: ownerDetails.name || userDetails.name || ownerProfile.name || 'N/A',
-          email: ownerDetails.email || userDetails.email || ownerProfile.email || 'N/A',
-          phone: ownerDetails.phone || userDetails.phone || ownerProfile.phone || 'N/A',
-          // Include ID Proof info if needed, though usually not shown to regular users 
-          // verified status comes from the Owner profile usually
-          verified: ownerProfile.verified
-       };
+      const userDetails = ownerProfile && ownerProfile.user ? ownerProfile.user : {};
+      const ownerDetails = property.ownerDetails || {};
+
+      return {
+        name: ownerDetails.name || userDetails.name || (ownerProfile ? ownerProfile.name : '') || 'N/A',
+        email: ownerDetails.email || userDetails.email || (ownerProfile ? ownerProfile.email : '') || 'N/A',
+        phone: ownerDetails.phone || userDetails.phone || (ownerProfile ? ownerProfile.phone : '') || 'N/A',
+        verified: ownerProfile ? ownerProfile.verified : false
+      };
     };
 
     // 2. Check if already viewed in THIS subscription
@@ -55,10 +53,13 @@ const viewOwnerDetails = async (req, res) => {
       // Already viewed, just return owner details
       const property = await Property.findById(propertyId).populate('owner');
       if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
-      
-      // Fetch owner user details
-      const ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
-      
+
+      // Fetch owner user details safely
+      let ownerProfile = null;
+      if (property.owner) {
+        ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
+      }
+
       const finalOwnerDetails = constructOwnerResponse(property, ownerProfile);
 
       return res.status(200).json({
@@ -72,9 +73,9 @@ const viewOwnerDetails = async (req, res) => {
 
     // 3. Check credit limit
     if (subscription.contactsViewed >= subscription.plan.contactLimit) {
-      return res.status(403).json({ 
-        success: false, 
-        error: { message: 'Contact view limit reached for this subscription plan.' } 
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Contact view limit reached for this subscription plan.' }
       });
     }
 
@@ -91,7 +92,12 @@ const viewOwnerDetails = async (req, res) => {
 
     // Return owner details
     const property = await Property.findById(propertyId).populate('owner');
-    const ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
+    if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+
+    let ownerProfile = null;
+    if (property.owner) {
+      ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
+    }
 
     const finalOwnerDetails = constructOwnerResponse(property, ownerProfile);
 
@@ -118,11 +124,11 @@ const getViewedProperties = async (req, res) => {
     // Get views from active subscription? Or all history?
     // Requirement: "api which gives subscription details and propeties he has viewed"
     // Requirement: "once subscriptions has ended user losses his data" -> imply only current subscription views
-    
+
     const subscription = await UserSubscription.findOne({ user: userId, status: 'active' });
-    
+
     if (!subscription) {
-       return res.status(200).json({ success: true, data: [], message: 'No active subscription, no viewed properties available.' });
+      return res.status(200).json({ success: true, data: [], message: 'No active subscription, no viewed properties available.' });
     }
 
     const views = await PropertyView.find({ subscription: subscription._id })

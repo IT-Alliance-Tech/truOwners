@@ -41,7 +41,7 @@ import BannerImg from "../../../assets/images/home/banner 1.png";
 const PropertiesPage = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated, token, isSubscribed } = useAuth();
   const hasAutoOpened = React.useRef(false);
 
   // State management
@@ -56,7 +56,7 @@ const PropertiesPage = () => {
 
   // Filter state - initialized from URL params to avoid initial unfiltered fetch
   const [filters, setFilters] = useState(() => {
-    const status = searchParams.get("status") || "All";
+    const status = searchParams.get("status") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     
@@ -721,6 +721,7 @@ const PropertiesPage = () => {
                           onClick={() => handlePropertyClick(property)}
                           onLoginRequired={handleLoginRequired}
                           isAuthenticated={isAuthenticated}
+                          isSubscribed={isSubscribed}
                           postType={property?.listingType ?? "rent"}
                         />
                         {/* Insert banner after the 2nd card (index === 1) */}
@@ -930,6 +931,7 @@ const PropertiesPage = () => {
           isInWishlist={wishlist.includes(selectedProperty.id)}
           onWishlistToggle={() => handleWishlistToggle(selectedProperty.id)}
           isAuthenticated={isAuthenticated}
+          isSubscribed={isSubscribed}
           onAuthPrompt={() => setShowAuthPrompt(true)}
         />
       )}
