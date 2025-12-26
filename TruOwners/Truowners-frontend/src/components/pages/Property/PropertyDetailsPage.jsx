@@ -63,7 +63,7 @@ import SubscriptionBanner from '../../common/SubscriptionBanner';
 const PropertyDetailsPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, isAuthenticated, token, loading: authLoading, validateSession } = useAuth()
+  const { user, isAuthenticated, token, loading: authLoading, validateSession, updateSubscription, isSubscribed } = useAuth()
   const [property, setProperty] = useState(null)
   const [similarProperties, setSimilarProperties] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -133,6 +133,7 @@ const PropertyDetailsPage = () => {
       const data = await response.json()
       if (data.success && data.data) {
         setSubscription(data.data)
+        updateSubscription(true) // Sync global state
       }
     } catch (error) {
       console.error('Error fetching subscription:', error)
@@ -796,7 +797,7 @@ const PropertyDetailsPage = () => {
               <h1 className="property-title">{property.title || 'Untitled Property'}</h1>
 
               <div className="property-location-wrapper">
-                {isAuthenticated && subscription ? (
+                {isAuthenticated && (subscription || isSubscribed) ? (
                   <p className="property-location">📍 {getLocationString(property.location)}</p>
                 ) : (
                   <div className="blurred-location">
@@ -1074,7 +1075,12 @@ const PropertyDetailsPage = () => {
 
                 {isAuthenticated ? (
                   <>
-                    {subscription ? (
+                    {checkingSubscription ? (
+                      <button className="contact-btn" disabled>
+                        <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                        Checking Subscription...
+                      </button>
+                    ) : (subscription || isSubscribed) ? (
                       <button className="contact-btn" onClick={contactOwnerFn}>
                         📞 Contact Owner
                       </button>
@@ -1226,6 +1232,7 @@ const PropertyDetailsPage = () => {
               onWishlistToggle={() => handleWishlistToggle(item.id)}
               onClick={() => handlePropertyClick(item)}
               isAuthenticated={isAuthenticated}
+              isSubscribed={isSubscribed}
               postType={item?.listingType ?? "Rent"}
             />
           </div>

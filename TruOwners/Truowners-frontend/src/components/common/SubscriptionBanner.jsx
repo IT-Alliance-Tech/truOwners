@@ -10,7 +10,7 @@ const SubscriptionBanner = ({ variant = 'default' }) => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, updateSubscription } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -29,6 +29,7 @@ const SubscriptionBanner = ({ variant = 'default' }) => {
       const data = await response.json();
       if (data.success && data.data) {
         setSubscription(data.data);
+        updateSubscription(true); // Sync global state
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);

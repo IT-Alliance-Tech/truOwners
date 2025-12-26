@@ -247,15 +247,15 @@ export default function FilterSidebar({
   // suggested min/max based on selected status tab
   const getSuggestedRange = (tab) => {
     switch (tab) {
-      case 1: // Rent
+      case 0: // Rent
         return [0, 500000]; // 0 – 5 Lakh
-      case 2: // Sale
+      case 1: // Sale
         return [0, 30000000]; // ✅ 0 – 3 Crore
-      case 3: // Lease
+      case 2: // Lease
         return [0, 2000000]; // ✅ 0 – 20 Lakh
-      case 4: // Commercial
+      case 3: // Commercial
         return [0, 5000000]; // 0 – 50 Lakh
-      default: // All or unselected
+      default:
         return [0, 30000000];
     }
   };
@@ -264,20 +264,23 @@ export default function FilterSidebar({
   const getStatusTabIndex = (status) => {
     switch (String(status).toLowerCase()) {
       case "rent":
-        return 1;
+        return 0;
       case "sell":
       case "sale":
-        return 2;
+        return 1;
       case "lease":
-        return 3;
+        return 2;
       case "commercial":
-        return 4;
+        return 3;
       default:
-        return 0;
+        return 0; // Default to Rent if unknown
     }
   };
 
-  const [statusTab, setStatusTab] = useState(() => getStatusTabIndex(currentFilters.status || initialFilters.status || ""));
+  const [statusTab, setStatusTab] = useState(() => {
+    const status = currentFilters.status || initialFilters.status || "rent";
+    return getStatusTabIndex(status);
+  });
   const [showMoreFilters, setShowMoreFilters] = useState();
   const [filters, setFilters] = useState(() => ({
     ...defaultFilters,
@@ -288,16 +291,16 @@ export default function FilterSidebar({
   }));
   // Custom range slider state 
   const [customRange, setCustomRange] = useState(() => {
-    const tabIndex = getStatusTabIndex(currentFilters.status || initialFilters.status || "");
-    if (tabIndex === 1 || tabIndex === 4) return currentFilters.rentRange || [5000, 500000];
-    if (tabIndex === 2 || tabIndex === 3) return currentFilters.budgetRange || [1000000, 30000000];
+    const tabIndex = getStatusTabIndex(currentFilters.status || initialFilters.status || "rent");
+    if (tabIndex === 0 || tabIndex === 3) return currentFilters.rentRange || [5000, 500000];
+    if (tabIndex === 1 || tabIndex === 2) return currentFilters.budgetRange || [1000000, 30000000];
     return [5000, 30000000];
   });
 
   const skipInitialRangeReset = useRef(true);
 
   useEffect(() => {
-    const statusMap = ["All", "rent", "sell", "lease", "commercial"];
+    const statusMap = ["rent", "sell", "lease", "commercial"];
     const newStatus = statusMap[statusTab];
     
     // On initial mount or when syncing from external prop, don't reset ranges if we already have them
@@ -305,9 +308,9 @@ export default function FilterSidebar({
       skipInitialRangeReset.current = false;
       setFilters(prev => ({ ...prev, status: newStatus }));
       // Also update customRange to match currentFilters if they exist
-      if (statusTab === 1 || statusTab === 4) {
+      if (statusTab === 0 || statusTab === 3) {
         if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
-      } else if (statusTab === 2 || statusTab === 3) {
+      } else if (statusTab === 1 || statusTab === 2) {
         if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
       }
       return;
@@ -388,9 +391,9 @@ export default function FilterSidebar({
           const newTabIndex = getStatusTabIndex(currentFilters.status);
           setStatusTab(newTabIndex);
           
-          if (newTabIndex === 1 || newTabIndex === 4) {
+          if (newTabIndex === 0 || newTabIndex === 3) {
              if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
-          } else if (newTabIndex === 2 || newTabIndex === 3) {
+          } else if (newTabIndex === 1 || newTabIndex === 2) {
              if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
           }
         }
@@ -452,15 +455,12 @@ export default function FilterSidebar({
     // Determine status based on selected tab
 
     if (statusTab === 0) {
-      // Don't append listingType for "ALL STATUS"
-      // Let backend return all types
-    } else if (statusTab === 1) {
       params.append("listingType", "rent");
-    } else if (statusTab === 2) {
+    } else if (statusTab === 1) {
       params.append("listingType", "sell");
-    } else if (statusTab === 3) {
+    } else if (statusTab === 2) {
       params.append("listingType", "lease");
-    } else if (statusTab === 4) {
+    } else if (statusTab === 3) {
       params.append("listingType", "commercial");
     }
 
@@ -475,21 +475,11 @@ export default function FilterSidebar({
       params.append("amenities", filters.amenities.join(","));
 
     // Budget/Rent handling based on listing type
-    if (statusTab === 0) {
-      // ALL STATUS - send both rent and price ranges if set
-      if (filters.rentRange[0] > 0 || filters.rentRange[1] < 500000) {
-        params.append("minRent", filters.rentRange[0]);
-        params.append("maxRent", filters.rentRange[1]);
-      }
-      if (filters.budgetRange[0] > 0 || filters.budgetRange[1] < 30000000) {
-        params.append("minBudget", filters.budgetRange[0]);
-        params.append("maxBudget", filters.budgetRange[1]);
-      }
-    } else if (statusTab === 1 || statusTab === 4) {
+    if (statusTab === 0 || statusTab === 3) {
       // Rent/Commercial - send rent range
       params.append("minRent", filters.rentRange[0]);
       params.append("maxRent", filters.rentRange[1]);
-    } else if (statusTab === 2 || statusTab === 3) {
+    } else if (statusTab === 1 || statusTab === 2) {
       // Sale/Lease - send price range
       params.append("minBudget", filters.budgetRange[0]);
       params.append("maxBudget", filters.budgetRange[1]);
@@ -501,7 +491,7 @@ export default function FilterSidebar({
       ...filters,
       search: filters.search, // Explicitly pass search
       // Ensure the correct status is sent even if the filters object was behind
-      status: ["All", "rent", "sell", "lease", "commercial"][statusTab]
+      status: ["rent", "sell", "lease", "commercial"][statusTab]
     });
   };
 
@@ -597,7 +587,6 @@ export default function FilterSidebar({
         }}
       >
         <StyledTabs value={statusTab} onChange={handleTabChange} centered>
-          <StyledTab label="ALL STATUS" />
           <StyledTab label="FOR RENT" />
           <StyledTab label="FOR SALE" />
           <StyledTab label="FOR LEASE" />
@@ -755,7 +744,7 @@ export default function FilterSidebar({
 
           {/* --- RENT RANGE Section (unchanged, used for rent-specific filters) --- */}
           <Grid item xs={12} md={5} maxWidth={"350px"} sx={{ mb: 2 }}>
-            {(statusTab === 1 || statusTab === 4) && (
+            {(statusTab === 0 || statusTab === 3) && (
               <>
                 <SectionLabel>RENT RANGE</SectionLabel>
                 <SliderContainer>

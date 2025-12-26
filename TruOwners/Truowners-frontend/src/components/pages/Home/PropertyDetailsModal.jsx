@@ -7,6 +7,7 @@ const PropertyDetailsModal = ({
   isInWishlist, 
   onWishlistToggle, 
   isAuthenticated, 
+  isSubscribed,
   onAuthPrompt 
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -138,7 +139,13 @@ const PropertyDetailsModal = ({
             <div className="property-header">
               <div className="property-basic-info">
                 <h1>{property.title || 'Untitled Property'}</h1>
-                <p className="location">📍 {getLocationString(property.location)}</p>
+                {isAuthenticated && isSubscribed ? (
+                  <p className="location">📍 {getLocationString(property.location)}</p>
+                ) : (
+                  <p className="location" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                    📍 {isAuthenticated ? 'Subscribe to view location' : 'Login to view location'}
+                  </p>
+                )}
                 <div className="property-specs">
                   <span>{property.bedrooms || 0} Bedrooms</span>
                   <span>{property.bathrooms || 0} Bathrooms</span>
@@ -170,10 +177,12 @@ const PropertyDetailsModal = ({
               </div>
               
               <button 
-                className="btn btn-primary btn-large contact-btn"
+                className={`btn btn-primary btn-large contact-btn ${isAuthenticated && !isSubscribed ? 'locked' : ''}`}
                 onClick={handleContactOwner}
               >
-                {isAuthenticated ? '📞 Contact Owner' : '🔐 Login to Contact'}
+                {isAuthenticated 
+                  ? (isSubscribed ? '📞 Contact Owner' : '🔒 Subscribe to Contact') 
+                  : '🔐 Login to Contact'}
               </button>
             </div>
 

@@ -24,7 +24,7 @@ const HomeHeaderContainer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, isSubscribed } = useAuth();
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -34,7 +34,7 @@ const HomeHeaderContainer = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
 
   const [filters, setFilters] = useState({
-    status: "All",
+    status: "rent",
     propertyType: "",
     listingType: "",
     city: "",
@@ -370,6 +370,7 @@ const HomeHeaderContainer = () => {
                   onClick={() => handlePropertyClick(property)}
                   onLoginRequired={handleLoginRequired}
                   isAuthenticated={isAuthenticated}
+                  isSubscribed={isSubscribed}
                   postType={property?.listingType ?? "Rent"}
                 />
               </motion.div>
@@ -430,6 +431,7 @@ const HomeHeaderContainer = () => {
           isInWishlist={wishlist.includes(selectedProperty.id)}
           onWishlistToggle={() => handleWishlistToggle(selectedProperty.id)}
           isAuthenticated={isAuthenticated}
+          isSubscribed={isSubscribed}
           onAuthPrompt={() => setShowAuthPrompt(true)}
         />
       )}
