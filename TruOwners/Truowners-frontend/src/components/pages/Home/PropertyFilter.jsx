@@ -97,7 +97,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiInputLabel-root": {
     display: "none",
   },
- 
 }));
 
 const StyledButton = styled(Button)(() => ({
@@ -364,21 +363,15 @@ export default function PropertyFilter({
         </Grid>
 
         {/* Search Button - Centered on both mobile and desktop */}
-        <Grid
-          item
-          xs={12}
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            mt: 3,
-          }}
-        >
+        <Grid item xs={12} lg={2}>
+          <SectionLabel sx={{ visibility: "hidden" }}>SEARCH</SectionLabel>
+
           <StyledButton
-            variant="contained"
+            fullWidth
             sx={{
-              width: { xs: "100%", lg: "180px" }, // balanced center look
-              height: "44px",
+              height: "38px", // same as inputs
+              borderRadius: "8px",
+              fontSize: "13px",
             }}
             onClick={handleSearchClick}
           >
