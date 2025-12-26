@@ -932,7 +932,10 @@
   padding-bottom: var(--spacing-8);
 }
 
-/* Responsive Design for Navigation */
+/* ===========================
+   Responsive Design
+   =========================== */
+
 @media (max-width: 768px) {
   .navigation-section {
     flex-direction: column;
@@ -953,6 +956,21 @@
     margin-top: var(--spacing-8);
     padding: var(--spacing-6);
   }
+
+  /* ✅ Card centering for mobile */
+  .cards-container,
+  .card-grid,
+  .property-cards {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 480px) {
@@ -965,7 +983,159 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--font-size-base);
   }
+
+  /* ✅ Extra safety for very small screens */
+  .card {
+    max-width: 100%;
+  }
 }
+/* Add this to your PropertyDetailsPage.css */
+
+/* Similar Properties Section - Mobile Fix */
+@media (max-width: 764px) {
+  /* Similar Properties Header - Flexbox Layout */
+  .similar-properties-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 15px;
+    gap: 15px;
+  }
+
+  .similar-properties-header h2,
+  .similar-properties-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    flex-shrink: 0;
+  }
+
+  /* Show More Button - Right Aligned */
+  .show-more-btn {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    background: #2F80ED;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+
+  .show-more-btn:hover {
+    background: #1d6dd8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
+  }
+
+  .return-section {
+    padding: 20px 10px;
+  }
+
+  .return-content {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .return-content h3 {
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+
+  .return-home-btn {
+    width: 100%;
+    max-width: 200px !important;
+    margin: 0 auto;
+  }
+
+  /* Property Card Container - Center Aligned */
+  .similar-properties-grid {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+  }
+
+  /* Individual Property Card Wrapper */
+  .similar-property-item {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+
+  /* Logo and Time Container - Fix Breaking */
+  .property-header-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    padding: 10px 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    max-width: 325px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .property-header-info img {
+    flex-shrink: 0;
+    max-width: 100px;
+    height: auto;
+  }
+
+  .property-header-info span {
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 10px;
+  }
+}
+
+/* Desktop - Similar Properties Header */
+@media (min-width: 765px) {
+  .similar-properties-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .similar-properties-header h2,
+  .similar-properties-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .show-more-btn {
+    padding: 12px 24px;
+    background: #2F80ED;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .show-more-btn:hover {
+    background: #1d6dd8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
+  }
+}
+
+
 /* Blurred Location */
 .property-location-wrapper {
   position: relative;
