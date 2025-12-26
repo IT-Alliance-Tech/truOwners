@@ -15,6 +15,8 @@ import Register from "../Auth/SignUp";
 import PropertyDetailsModal from "./PropertyDetailsModal.jsx";
 import { motion } from "framer-motion";
 
+
+
 const HomeHeaderContainer = () => {
   const width = useScreenSize();
   const navigate = useNavigate();
@@ -22,7 +24,7 @@ const HomeHeaderContainer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, isSubscribed } = useAuth();
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -32,7 +34,7 @@ const HomeHeaderContainer = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
 
   const [filters, setFilters] = useState({
-    status: "All",
+    status: "rent",
     propertyType: "",
     listingType: "",
     city: "",
@@ -102,7 +104,7 @@ const HomeHeaderContainer = () => {
       try {
         data = await response.json();
         validateApiResponse(data);
-      } catch (parseError) {
+      } catch  {
         throw new Error("Invalid response from server");
       }
 
@@ -307,20 +309,10 @@ const HomeHeaderContainer = () => {
                 maxBudget: "",
               }}
               currentFilters={filters}
-              onSearch={(queryString, updatedFilters) => {
-                console.log("Filter updated:", updatedFilters);
-                setFilters({
-                  ...filters,
-                  status: updatedFilters.status,
-                  listingType: updatedFilters.status, // Map status to listingType for API
-                  propertyType: updatedFilters.propertyType,
-                  city: updatedFilters.city,
-                  bedrooms: updatedFilters.bedrooms,
-                  searchTerm: updatedFilters.search,
-                  rentRange: updatedFilters.rentRange,
-                  maxBudget: updatedFilters.maxBudget || "",
-                });
-              }}
+               onSearch={(queryString ) => {
+                 const params = queryString ? `${queryString}&fromSearch=true` : "fromSearch=true";
+                 navigate(`/properties?${params}`);
+               }}
             />
           </div>
         </div>
@@ -378,6 +370,7 @@ const HomeHeaderContainer = () => {
                   onClick={() => handlePropertyClick(property)}
                   onLoginRequired={handleLoginRequired}
                   isAuthenticated={isAuthenticated}
+                  isSubscribed={isSubscribed}
                   postType={property?.listingType ?? "Rent"}
                 />
               </motion.div>
@@ -438,6 +431,7 @@ const HomeHeaderContainer = () => {
           isInWishlist={wishlist.includes(selectedProperty.id)}
           onWishlistToggle={() => handleWishlistToggle(selectedProperty.id)}
           isAuthenticated={isAuthenticated}
+          isSubscribed={isSubscribed}
           onAuthPrompt={() => setShowAuthPrompt(true)}
         />
       )}

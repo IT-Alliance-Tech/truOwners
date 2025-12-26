@@ -41,7 +41,8 @@ import BannerImg from "../../../assets/images/home/banner 1.png";
 const PropertiesPage = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated, token, isSubscribed } = useAuth();
+  const hasAutoOpened = React.useRef(false);
 
   // State management
   const [properties, setProperties] = useState([]);
@@ -55,13 +56,12 @@ const PropertiesPage = () => {
 
   // Filter state - initialized from URL params to avoid initial unfiltered fetch
   const [filters, setFilters] = useState(() => {
-    const status = searchParams.get("status") || "All";
+    const status = searchParams.get("status") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     
-    // If we have a budget/rent in URL, use it as the upper bound for both or specifically
-    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
-    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+    const initialRentMax = rawMaxRent || 500000;
+    const initialBudgetMax = rawMaxBudget || 30000000;
 
     return {
       propertyType: searchParams.get("propertyType") || "",
@@ -103,8 +103,8 @@ const PropertiesPage = () => {
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     
-    const initialRentMax = rawMaxRent || (status === "rent" || status === "commercial" ? rawMaxBudget : null) || 500000;
-    const initialBudgetMax = rawMaxBudget || (status === "sell" || status === "lease" ? rawMaxBudget : null) || 30000000;
+    const initialRentMax = rawMaxRent || 500000;
+    const initialBudgetMax = rawMaxBudget || 30000000;
 
     const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
@@ -131,6 +131,16 @@ const PropertiesPage = () => {
 
     setFilters(updatedFilters);
     setPage(parseInt(searchParams.get("page")) || 1);
+
+    // Auto-open filter drawer 
+    const hasFilters = Array.from(searchParams.keys()).some(key => 
+      ["status", "city", "propertyType", "bedrooms", "search"].includes(key)
+    );
+     const cameFromSearch = searchParams.get("fromSearch") === "true";
+    if (hasFilters || cameFromSearch && !hasAutoOpened.current) {
+      setMobileFilterOpen(true);
+      hasAutoOpened.current = true;
+    }
   }, [searchParams]);
 
   // Fetch properties whenever filters or page changes
@@ -215,7 +225,6 @@ const PropertiesPage = () => {
       } else {
         throw new Error(getErrorMessage(data));
       }
-      setMobileFilterOpen(false);
     } catch (err) {
       if (err.name === "AbortError") return;
       console.error("Fetch properties error:", err);
@@ -363,6 +372,7 @@ const PropertiesPage = () => {
       newSearchParams.set("status", newFilters.status);
 
     setSearchParams(newSearchParams);
+    setMobileFilterOpen(false); // Close drawer after searching from within sidebar
   };
 
   const handlePageChange = (event, newPage) => {
@@ -534,7 +544,7 @@ const PropertiesPage = () => {
           </Paper>
         )}
 
-        <Grid container spacing={2} sx={{ mt: 2, display: "flex" }}>
+        <Grid container spacing={1} sx={{ mt: 2, display: "flex" }}>
           {/* Sidebar */}
           <Grid
             item
@@ -675,7 +685,7 @@ const PropertiesPage = () => {
                     sx={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(310px, 1fr))",
+                        "repeat(auto-fill, minmax(300px, 1fr))",
                       gap: 3,
                       mb: 4,
                       justifyContent: "center",
@@ -711,6 +721,7 @@ const PropertiesPage = () => {
                           onClick={() => handlePropertyClick(property)}
                           onLoginRequired={handleLoginRequired}
                           isAuthenticated={isAuthenticated}
+                          isSubscribed={isSubscribed}
                           postType={property?.listingType ?? "rent"}
                         />
                         {/* Insert banner after the 2nd card (index === 1) */}
@@ -920,6 +931,7 @@ const PropertiesPage = () => {
           isInWishlist={wishlist.includes(selectedProperty.id)}
           onWishlistToggle={() => handleWishlistToggle(selectedProperty.id)}
           isAuthenticated={isAuthenticated}
+          isSubscribed={isSubscribed}
           onAuthPrompt={() => setShowAuthPrompt(true)}
         />
       )}

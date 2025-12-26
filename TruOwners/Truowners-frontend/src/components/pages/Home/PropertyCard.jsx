@@ -35,7 +35,7 @@ const PropertyCard = ({
   onLoginRequired,
   onViewDetails,
   onWishlistToggle,
-  postType
+  postType,
 }) => {
   const { isIn, toggle } = useWishlist();
   const { isSubscribed } = useAuth(); // IMPORTANT: Get subscription status from context
@@ -62,7 +62,8 @@ const PropertyCard = ({
 
   const getLocationString = (location) => {
     try {
-      if (typeof location === "string" && location.trim()) return capitalizeText(location);
+      if (typeof location === "string" && location.trim())
+        return capitalizeText(location);
       if (location && typeof location === "object") {
         if (location.address) return capitalizeText(location.address);
         if (location.street) return capitalizeText(location.street);
@@ -185,7 +186,9 @@ const PropertyCard = ({
         onWishlistToggle(nextState);
       }
       console.log(
-        `Property ${propertyId} ${nextState ? "added to" : "removed from"} wishlist`
+        `Property ${propertyId} ${
+          nextState ? "added to" : "removed from"
+        } wishlist`
       );
     } catch (error) {
       console.error("Error toggling wishlist:", error);
@@ -226,8 +229,8 @@ const PropertyCard = ({
             !isAuthenticated
               ? "Login to add to wishlist"
               : wishlisted
-                ? "Remove from wishlist"
-                : "Add to wishlist"
+              ? "Remove from wishlist"
+              : "Add to wishlist"
           }
           isWishlisted={wishlisted && isAuthenticated}
           disabled={!propertyId}
@@ -295,13 +298,9 @@ const PropertyCard = ({
             </span>
           ) : null}
 
-          {postType && postType.trim() !== ""
-            ? (
-              <span className="property-card__status-all">
-                {postType}
-              </span>
-            )
-            : null}
+          {postType && postType.trim() !== "" ? (
+            <span className="property-card__status-all">{postType}</span>
+          ) : null}
         </div>
 
         <h3 title={property?.title} className="property-card__title">
@@ -311,25 +310,20 @@ const PropertyCard = ({
         {/* UPDATED: Location section with blur effect */}
         <div
           className="property-card__location"
-          style={{
-            filter: isAuthenticated && !isSubscribed ? 'blur(8px)' : 'none',
-            pointerEvents: isAuthenticated && !isSubscribed ? 'none' : 'auto',
-            userSelect: isAuthenticated && !isSubscribed ? 'none' : 'auto',
-            transition: 'filter 0.3s ease'
-          }}
           title={
-            !isAuthenticated 
+            !isAuthenticated
               ? "Login to view location"
-              : !isSubscribed 
-                ? "Subscribe to view location" 
-                : getLocationString(property?.location)
+              : !isSubscribed
+              ? "Subscribe to view location"
+              : getLocationString(property?.location)
           }
         >
           <span>
-            {!isAuthenticated 
+            {!isAuthenticated
               ? "📍 Login to view location"
-              : getLocationString(property?.location)
-            }
+              : !isSubscribed
+              ? "🔒 Subscribe to view location"
+              : `📍 ${getLocationString(property?.location)}`}
           </span>
         </div>
 
@@ -350,8 +344,9 @@ const PropertyCard = ({
 
         <div className="property-card__actions">
           <motion.button
-            className={`property-card__action-btn ${isAuthenticated ? "authenticated" : "unauthenticated"
-              } rounded-2`}
+            className={`property-card__action-btn ${
+              isAuthenticated ? "authenticated" : "unauthenticated"
+            } rounded-2`}
             onClick={handleViewDetailsClick}
             type="button"
             disabled={!propertyId}
@@ -361,8 +356,8 @@ const PropertyCard = ({
             {!propertyId
               ? "Property Unavailable"
               : isAuthenticated
-                ? "View Details"
-                : "Login to View Details"}
+              ? "View Details"
+              : "Login to View Details"}
           </motion.button>
         </div>
       </div>

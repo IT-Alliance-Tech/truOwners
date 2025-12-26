@@ -8,7 +8,7 @@ import './WishlistPage.css'
 
 const WishlistPage = () => {
   const navigate = useNavigate()
-  const { user, isAuthenticated, token } = useAuth()
+  const { user, isAuthenticated, token, isSubscribed } = useAuth()
   const [wishlistProperties, setWishlistProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -178,6 +178,7 @@ const WishlistPage = () => {
                   onClick={() => handlePropertyClick(property)}
                   onLoginRequired={() => { }} // Not needed since user is already authenticated
                   isAuthenticated={true}
+                  isSubscribed={isSubscribed}
                   postType={property?.listingType ?? "Rent"}
                 />
               ))}
