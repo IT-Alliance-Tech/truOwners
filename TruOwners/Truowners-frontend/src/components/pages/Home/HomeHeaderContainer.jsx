@@ -15,6 +15,8 @@ import Register from "../Auth/SignUp";
 import PropertyDetailsModal from "./PropertyDetailsModal.jsx";
 import { motion } from "framer-motion";
 
+
+
 const HomeHeaderContainer = () => {
   const width = useScreenSize();
   const navigate = useNavigate();
@@ -102,7 +104,7 @@ const HomeHeaderContainer = () => {
       try {
         data = await response.json();
         validateApiResponse(data);
-      } catch (parseError) {
+      } catch  {
         throw new Error("Invalid response from server");
       }
 
@@ -296,19 +298,9 @@ const HomeHeaderContainer = () => {
                 maxBudget: "",
               }}
               currentFilters={filters}
-              onSearch={(queryString, updatedFilters) => {
-                setFilters({
-                  ...filters,
-                  status: updatedFilters.status,
-                  listingType: updatedFilters.status, // Map status to listingType for API
-                  propertyType: updatedFilters.propertyType,
-                  city: updatedFilters.city,
-                  bedrooms: updatedFilters.bedrooms,
-                  searchTerm: updatedFilters.search,
-                  rentRange: updatedFilters.rentRange,
-                  maxBudget: updatedFilters.maxBudget,
-                });
-              }}
+               onSearch={(queryString ) => {
+                 navigate(`/properties?${queryString}`);
+               }}
             />
           </div>
         </div>

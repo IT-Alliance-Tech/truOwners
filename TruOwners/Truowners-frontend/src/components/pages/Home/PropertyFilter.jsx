@@ -9,6 +9,8 @@ import {
   Tabs,
   Tab,
   InputAdornment,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -48,15 +50,8 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   "& .MuiTabs-flexContainer": {
     display: "flex",
     justifyContent: "center",
-    // flexWrap: "wrap",  
-    [theme.breakpoints.down(568)]: {
-      flexDirection: "column",
-      alignItems: "center",
-    },
+    width: "100%",
     [theme.breakpoints.down(992)]: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "8px",
       justifyContent: "center",
       alignItems: "center",
     },
@@ -80,11 +75,15 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     fontWeight: "800",
   },
   "@media (max-width:568px)": {
-    minWidth: "250px",
+    minWidth: "0",
+    flex: "1 1 0",
+    fontSize: "11px",
+    padding: "10px 8px",
+    whiteSpace: "nowrap",
   },
 }));
 
-const StyledTextField = styled(TextField)(() => ({
+const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     borderRadius: "6px",
     backgroundColor: "#ffffff",
@@ -92,6 +91,9 @@ const StyledTextField = styled(TextField)(() => ({
     width: "100%",
     height: "40px",
     maxWidth: "170px",
+    [theme.breakpoints.down("lg")]: {
+       maxWidth: "100%", 
+    },
   },
   "& .MuiInputLabel-root": {
     display: "none",
@@ -123,25 +125,28 @@ const SectionLabel = styled(Typography)(() => ({
 
 // ======== Component ========
 export default function PropertyFilter({ initialFilters = {}, currentFilters = {}, onSearch }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [filters, setFilters] = useState(() => ({
     ...defaultFilters,
     ...initialFilters,
   }));
 
-  // Map status to tab index
+  // Map status to tab index (0=ALL, 1=RENT, 2=SALE, 3=LEASE, 4=COMMERCIAL)
   const getStatusTabIndex = (status) => {
     switch (status) {
       case "rent":
         return 1;
       case "sale":
-      case "sell": // Backend uses 'sell'
+      case "sell": 
         return 2;
       case "lease":
         return 3;
       case "commercial":
         return 4;
       default:
-        return 0;
+        return 0; // Default to ALL STATUS
     }
   };
 
@@ -175,7 +180,7 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
       }
     }, 500);
     return () => clearTimeout(delay);
-  }, );
+  }, [filters.search]);
 
   const handleChange = (name, value) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -194,9 +199,9 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
 
     console.log("PropertyFilter: handleSearchClick called with filters", filters);
 
-    // Map status to listingType for backend compatibility
+    // Use 'status' key for URL params to match Properties.jsx expectation
     if (filters.status && filters.status !== "All") {
-      params.append("listingType", filters.status);
+      params.append("status", filters.status);
     }
     if (filters.propertyType) params.append("propertyType", filters.propertyType);
     if (filters.city) params.append("city", filters.city);
@@ -217,22 +222,25 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
       <StyledTabs
         value={statusTab}
         onChange={handleTabChange}
-        centered
-        sx={{ display: { xs: "none", lg: "flex" } }}
+        centered={!isMobile}
+        variant={isMobile ? "fullWidth" : "scrollable"}
+        scrollButtons={isMobile ? false : "auto"}
+        allowScrollButtonsMobile={false}
+        sx={{ width: "100%" }}
       >
-        <StyledTab label="ALL STATUS" />
-        <StyledTab label="FOR RENT" />
-        <StyledTab label="FOR SALE" />
-        <StyledTab label="FOR LEASE" />
-        <StyledTab label="FOR COMMERCIAL" />
+        <StyledTab label="ALL STATUS" sx={{ display: { xs: "none", sm: "inline-flex" } }} />
+        <StyledTab label="RENT" />
+        <StyledTab label="SALE" />
+        <StyledTab label="LEASE" sx={{ display: { xs: "none", sm: "inline-flex" } }} />
+        <StyledTab label="COMMERCIAL" />
       </StyledTabs>
 
       {/* Filters */}
       <Grid
         container
-        spacing={3}
+        spacing={2}
         sx={{
-          p: 4,
+          p: { xs: 2, lg: 4 },
           justifyContent: "center",
           alignItems: "end",
           backgroundColor: "white",
@@ -240,8 +248,8 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
           boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
         }}
       >
-        {/* Property Type */}
-        <Grid item xs={12} sm={6} md={3} sx={{ display: { xs: "none", lg: "block" } }}>
+        {/* Property Type - Desktop Only */}
+        <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <HomeIcon sx={{ fontSize: 16 }} />
             LOOKING FOR
@@ -266,8 +274,8 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
         </Grid>
 
         {/* Location */}
-        <Grid item xs={12} sm={8} lg={3}>
-          <SectionLabel>
+        <Grid item xs={12} lg={3}>
+          <SectionLabel sx={{ display: { xs: "none", lg: "flex" } }}>
             <LocationOnIcon sx={{ fontSize: 16 }} />
             LOCATION
           </SectionLabel>
@@ -286,8 +294,8 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
           />
         </Grid>
 
-        {/* Bedrooms */}
-        <Grid item xs={12} sm={6} md={3} sx={{ display: { xs: "none", lg: "block" } }}>
+        {/* Bedrooms - Desktop Only */}
+        <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <BedIcon sx={{ fontSize: 16 }} />
             PROPERTY SIZE
@@ -311,8 +319,8 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
           </StyledTextField>
         </Grid>
 
-        {/* Budget */}
-        <Grid item xs={12} sm={6} md={3} sx={{ display: { xs: "none", lg: "block" } }}>
+        {/* Budget - Desktop Only */}
+        <Grid item xs={12} lg={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <SectionLabel>
             <BedIcon sx={{ fontSize: 16 }} />
             YOUR BUDGET
@@ -328,10 +336,26 @@ export default function PropertyFilter({ initialFilters = {}, currentFilters = {
           />
         </Grid>
 
-        {/* Search Button */}
-        <Grid item xs={12} sm={4} lg={2}>
-          <StyledButton variant="contained" fullWidth onClick={handleSearchClick}>
-            Search
+        {/* Search Button - Centered on both mobile and desktop */}
+        <Grid 
+          item 
+          xs={12}
+          sx={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center",
+            mt: { xs: 1, lg: 2 }
+          }}
+        >
+          <StyledButton 
+            variant="contained" 
+            sx={{ 
+              width: { xs: "140px", lg: "180px" },
+              height: "45px" 
+            }} 
+            onClick={handleSearchClick}
+          >
+            SEARCH
           </StyledButton>
         </Grid>
       </Grid>

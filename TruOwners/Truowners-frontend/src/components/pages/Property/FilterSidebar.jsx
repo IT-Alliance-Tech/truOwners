@@ -248,15 +248,15 @@ export default function FilterSidebar({
   const getSuggestedRange = (tab) => {
     switch (tab) {
       case 1: // Rent
-        return [5000, 500000]; // 5K – 5 Lakh
+        return [0, 500000]; // 0 – 5 Lakh
       case 2: // Sale
-        return [1000000, 30000000]; // ✅ 10 Lakh – 3 Crore
+        return [0, 30000000]; // ✅ 0 – 3 Crore
       case 3: // Lease
-        return [500000, 2000000]; // ✅ 5 Lakh – 20 Lakh
+        return [0, 2000000]; // ✅ 0 – 20 Lakh
       case 4: // Commercial
-        return [5000, 5000000]; // 5K – 50 Lakh
+        return [0, 5000000]; // 0 – 50 Lakh
       default: // All or unselected
-        return [5000, 30000000];
+        return [0, 30000000];
     }
   };
 
@@ -304,6 +304,12 @@ export default function FilterSidebar({
     if (skipInitialRangeReset.current) {
       skipInitialRangeReset.current = false;
       setFilters(prev => ({ ...prev, status: newStatus }));
+      // Also update customRange to match currentFilters if they exist
+      if (statusTab === 1 || statusTab === 4) {
+        if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
+      } else if (statusTab === 2 || statusTab === 3) {
+        if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
+      }
       return;
     }
 
@@ -710,10 +716,9 @@ export default function FilterSidebar({
                 <Slider
                   value={customRange || [0, 0]}
                   onChange={(e, newValue) => {
-                    // Update visual range
+                   
                     setCustomRange(newValue);
 
-                    // ✅ Keep filters in sync immediately for SALE (2) and LEASE (3)
                     if (statusTab === 2 || statusTab === 3) {
                       setFilters((prev) => ({
                         ...prev,
@@ -724,7 +729,7 @@ export default function FilterSidebar({
                     }
                   }}
                   onChangeCommitted={(e, newValue) => {
-                    // ✅ Finalize update when user releases slider
+                 
                     setFilters((prev) => ({
                       ...prev,
                       minPrice: Number(newValue[0]),
@@ -733,7 +738,7 @@ export default function FilterSidebar({
                     }));
                   }}
                   valueLabelDisplay="off"
-                  min={5000}
+                  min={0}
                   max={30000000}
                   step={5000}
                   sx={{
