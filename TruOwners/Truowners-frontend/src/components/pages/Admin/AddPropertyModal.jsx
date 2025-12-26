@@ -128,10 +128,8 @@ const AddPropertyModal = ({
         "",
       electricityBill:
         owner.electricityBill ||
-      
         owner.electricity_bill_number ||
         owner.user?.electricityBill ||
-        
         "",
       electricityBillImageUrl:
         owner.electricityBillImageUrl ||
@@ -146,18 +144,18 @@ const AddPropertyModal = ({
     // Set previews immediately
     setIdProofPreview(
       owner.idProofImageUrl ||
-      owner.id_proof_image_url ||
-      owner.id_proof_image ||
-      owner.user?.idProofImageUrl ||
-      owner.user?.id_proof_image_url ||
-      ""
+        owner.id_proof_image_url ||
+        owner.id_proof_image ||
+        owner.user?.idProofImageUrl ||
+        owner.user?.id_proof_image_url ||
+        ""
     );
 
     setElectricityBillPreview(
       owner.electricityBillImageUrl ||
-      owner.electricity_bill_image_url ||
-      owner.user?.electricityBillImageUrl ||
-      ""
+        owner.electricity_bill_image_url ||
+        owner.user?.electricityBillImageUrl ||
+        ""
     );
 
     // Property
@@ -229,12 +227,18 @@ const AddPropertyModal = ({
             idProofType: data.data.owner?.idProofType || "",
             idProofNumber: data.data.owner?.idProofNumber || "",
             idProofImageUrl: data.data.owner?.idProofImageUrl || "",
-            electricityBill: data.data.owner?.electricityBill || data.data.owner?.electricityBill || "",
-            electricityBillImageUrl: data.data.owner?.electricityBillImageUrl || "",
+            electricityBill:
+              data.data.owner?.electricityBill ||
+              data.data.owner?.electricityBill ||
+              "",
+            electricityBillImageUrl:
+              data.data.owner?.electricityBillImageUrl || "",
           }));
 
           setIdProofPreview(data.data.owner?.idProofImageUrl || "");
-          setElectricityBillPreview(data.data.owner?.electricityBillImageUrl || "");
+          setElectricityBillPreview(
+            data.data.owner?.electricityBillImageUrl || ""
+          );
 
           setError("✓ Owner found. Property will be linked to existing owner.");
         } else {
@@ -509,7 +513,10 @@ const AddPropertyModal = ({
           electricityBillFile.name,
           `electricitybill_${ownerData.email || "owner"}`
         );
-        const electricityBillResult = await uploadFile(electricityBillFile, electricityBillFileName);
+        const electricityBillResult = await uploadFile(
+          electricityBillFile,
+          electricityBillFileName
+        );
         if (!electricityBillResult.success) {
           throw new Error("Failed to upload electricity bill");
         }
@@ -537,7 +544,7 @@ const AddPropertyModal = ({
       };
 
       // Add rent/deposit for rent type
-      if (propertyData.listingType === 'rent') {
+      if (propertyData.listingType === "rent") {
         propertyPayload.rent = parseInt(propertyData.rent) || 0;
         propertyPayload.deposit = parseInt(propertyData.deposit) || 0;
       } else {
@@ -594,12 +601,21 @@ const AddPropertyModal = ({
         body: JSON.stringify(payload),
       });
 
-      let data;
+      let data = null;
+
       try {
         data = await response.json();
-        validateApiResponse(data);
-      } catch {
-        throw new Error("Invalid response from server");
+      } catch (e) {
+        console.error("Response is not JSON:", e);
+      }
+
+      if (!response.ok) {
+        const message =
+          data?.error?.message ||
+          data?.message ||
+          "Something went wrong on server";
+
+        throw new Error(message);
       }
 
       if (!response.ok) {
@@ -615,8 +631,12 @@ const AddPropertyModal = ({
     } catch (err) {
       console.error("Add/Edit property error:", err);
       setError(err.message || "Failed to save property. Please try again.");
-    } finally {
-      setLoading(false);
+      const backendMessage =
+        err?.message ||
+        err?.response?.error?.message ||
+        "Failed to save property. Please try again.";
+
+      setError(backendMessage);
     }
   };
 
@@ -755,9 +775,14 @@ const AddPropertyModal = ({
                       <img
                         src={idProofPreview || ownerData.idProofImageUrl}
                         alt="ID Proof"
-                        style={{ maxWidth: "200px", marginTop: "10px", cursor: "pointer" }}
+                        style={{
+                          maxWidth: "200px",
+                          marginTop: "10px",
+                          cursor: "pointer",
+                        }}
                         onClick={() => {
-                          const url = idProofPreview || ownerData.idProofImageUrl;
+                          const url =
+                            idProofPreview || ownerData.idProofImageUrl;
                           if (url) window.open(url, "_blank");
                         }}
                       />
@@ -767,7 +792,9 @@ const AddPropertyModal = ({
 
                 {/* Electricity Bill Number */}
                 <div className="form-group">
-                  <label htmlFor="electricityBill">Electricity Bill Number</label>
+                  <label htmlFor="electricityBill">
+                    Electricity Bill Number
+                  </label>
                   <input
                     type="text"
                     id="electricityBill"
@@ -781,7 +808,9 @@ const AddPropertyModal = ({
 
                 {/* Electricity Bill Image */}
                 <div className="form-group">
-                  <label htmlFor="electricityBillImage">Electricity Bill Image</label>
+                  <label htmlFor="electricityBillImage">
+                    Electricity Bill Image
+                  </label>
 
                   <div className="file-upload-area">
                     <input
@@ -792,7 +821,10 @@ const AddPropertyModal = ({
                       className="file-input"
                       disabled={ownerExists && !isEdit}
                     />
-                    <label htmlFor="electricityBillImage" className="file-upload-label">
+                    <label
+                      htmlFor="electricityBillImage"
+                      className="file-upload-label"
+                    >
                       <div className="upload-icon">📄</div>
                       <div className="upload-text">
                         <strong>Click to upload Electricity Bill</strong>
@@ -800,14 +832,24 @@ const AddPropertyModal = ({
                     </label>
                   </div>
 
-                  {(electricityBillPreview || ownerData.electricityBillImageUrl) && (
+                  {(electricityBillPreview ||
+                    ownerData.electricityBillImageUrl) && (
                     <div className="media-previews-container">
                       <img
-                        src={electricityBillPreview || ownerData.electricityBillImageUrl}
+                        src={
+                          electricityBillPreview ||
+                          ownerData.electricityBillImageUrl
+                        }
                         alt="Electricity Bill"
-                        style={{ maxWidth: "200px", marginTop: "10px", cursor: "pointer" }}
+                        style={{
+                          maxWidth: "200px",
+                          marginTop: "10px",
+                          cursor: "pointer",
+                        }}
                         onClick={() => {
-                          const url = electricityBillPreview || ownerData.electricityBillImageUrl;
+                          const url =
+                            electricityBillPreview ||
+                            ownerData.electricityBillImageUrl;
                           if (url) window.open(url, "_blank");
                         }}
                       />
@@ -1042,8 +1084,8 @@ const AddPropertyModal = ({
                   {propertyData.listingType === "sell"
                     ? "Sale Price"
                     : propertyData.listingType === "lease"
-                      ? "Lease Amount"
-                      : "Commercial Price"}{" "}
+                    ? "Lease Amount"
+                    : "Commercial Price"}{" "}
                   (₹) *
                 </label>
                 <input

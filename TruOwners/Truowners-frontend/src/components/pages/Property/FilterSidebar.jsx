@@ -587,10 +587,10 @@ export default function FilterSidebar({
         }}
       >
         <StyledTabs value={statusTab} onChange={handleTabChange} centered>
-          <StyledTab label="FOR RENT" />
-          <StyledTab label="FOR SALE" />
-          <StyledTab label="FOR LEASE" />
-          <StyledTab label="FOR COMMERCIAL" />
+          <StyledTab label="RENT" />
+          <StyledTab label="SALE" />
+          <StyledTab label="LEASE" />
+          <StyledTab label="COMMERCIAL" />
         </StyledTabs>
       </Box>
 

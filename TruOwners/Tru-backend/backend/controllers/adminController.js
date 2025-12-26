@@ -208,6 +208,21 @@ const createPlaceholderOwner = async () => {
 const createPropertyWithOwner = async (req, res) => {
   try {
     const { owner: ownerData = null, property: propertyData } = req.body;
+    if (
+      !ownerData ||
+      !isFilled(ownerData.name) ||
+      !isFilled(ownerData.email) ||
+      !isFilled(ownerData.phone)
+    ) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: {
+          message: "Owner name, email, and phone are mandatory",
+        },
+        data: null,
+      });
+    }
 
     if (!propertyData) {
       return res.status(400).json({
