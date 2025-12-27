@@ -56,12 +56,12 @@ const PropertiesPage = () => {
 
   // Filter state - initialized from URL params to avoid initial unfiltered fetch
   const [filters, setFilters] = useState(() => {
-    const status = searchParams.get("status") || "rent";
+    const status = searchParams.get("status") || searchParams.get("listingType") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
-    
-    const initialRentMax = rawMaxRent || 500000;
-    const initialBudgetMax = rawMaxBudget || 30000000;
+    const isRentOrComm = status === "rent" || status === "commercial";
+    const initialRentMax = rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
+    const initialBudgetMax = (!isRentOrComm && rawMaxBudget) ? rawMaxBudget : 30000000;
 
     return {
       propertyType: searchParams.get("propertyType") || "",
@@ -99,12 +99,12 @@ const PropertiesPage = () => {
 
   // Initialize filters from URL parameters ONLY when searchParams change
   useEffect(() => {
-    const status = searchParams.get("status") || "All";
+    const status = searchParams.get("status") || searchParams.get("listingType") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
-    
-    const initialRentMax = rawMaxRent || 500000;
-    const initialBudgetMax = rawMaxBudget || 30000000;
+    const isRentOrComm = status === "rent" || status === "commercial";
+    const initialRentMax = rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
+    const initialBudgetMax = (!isRentOrComm && rawMaxBudget) ? rawMaxBudget : 30000000;
 
     const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
@@ -132,12 +132,13 @@ const PropertiesPage = () => {
     setFilters(updatedFilters);
     setPage(parseInt(searchParams.get("page")) || 1);
 
-    // Auto-open filter drawer 
+    // Auto-open filter drawer only once on initial search
     const hasFilters = Array.from(searchParams.keys()).some(key => 
       ["status", "city", "propertyType", "bedrooms", "search"].includes(key)
     );
-     const cameFromSearch = searchParams.get("fromSearch") === "true";
-    if (hasFilters || cameFromSearch && !hasAutoOpened.current) {
+    const cameFromSearch = searchParams.get("fromSearch") === "true";
+    
+    if (!hasAutoOpened.current && (hasFilters || cameFromSearch)) {
       setMobileFilterOpen(true);
       hasAutoOpened.current = true;
     }
