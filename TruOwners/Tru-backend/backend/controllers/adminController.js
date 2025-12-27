@@ -211,14 +211,13 @@ const createPropertyWithOwner = async (req, res) => {
     if (
       !ownerData ||
       !isFilled(ownerData.name) ||
-      !isFilled(ownerData.email) ||
       !isFilled(ownerData.phone)
     ) {
       return res.status(400).json({
         statusCode: 400,
         success: false,
         error: {
-          message: "Owner name, email, and phone are mandatory",
+          message: "Owner name, and phone are mandatory",
         },
         data: null,
       });
