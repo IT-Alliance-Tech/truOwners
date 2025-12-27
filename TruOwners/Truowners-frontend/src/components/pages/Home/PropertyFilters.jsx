@@ -60,7 +60,7 @@ const PropertyFilters = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [rentRange, setRentRange] = useState([0, 500000]); // RENT ONLY
   const [priceRange, setPriceRange] = useState([0, 50000000]);
-  const listingType = filters.status || "rent";
+  const listingType = filters.listingType || filters.status || "rent";
 
   // Extract unique values from properties for autocomplete
   const uniqueLocations = [
@@ -127,7 +127,7 @@ const PropertyFilters = ({
 
     if (listingType === "sell" || listingType === "lease") {
       const prices = properties
-        .filter((p) => p.listingType !== "rent")
+        .filter((p) => p.listingType !== "listingType")
         .map((p) => Number(p.price) || 0);
 
       const minPrice = prices.length ? Math.min(...prices) : 0;

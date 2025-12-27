@@ -282,13 +282,23 @@ export default function FilterSidebar({
     return getStatusTabIndex(status);
   });
   const [showMoreFilters, setShowMoreFilters] = useState();
-  const [filters, setFilters] = useState(() => ({
-    ...defaultFilters,
-    ...initialFilters,
-    ...currentFilters,
-    search: currentFilters.search || initialFilters.search || defaultFilters.search,
-    status: currentFilters.status || initialFilters.status || defaultFilters.status,
-  }));
+  const [filters, setFilters] = useState(() => {
+    const base = {
+      ...defaultFilters,
+      ...initialFilters,
+      ...currentFilters,
+    };
+    // Initialize Min/Max strings from range arrays
+    if (base.rentRange) {
+      base.rentMin = String(base.rentRange[0]);
+      base.rentMax = String(base.rentRange[1]);
+    }
+    if (base.budgetRange) {
+      base.budgetMin = String(base.budgetRange[0]);
+      base.budgetMax = String(base.budgetRange[1]);
+    }
+    return base;
+  });
   // Custom range slider state 
   const [customRange, setCustomRange] = useState(() => {
     const tabIndex = getStatusTabIndex(currentFilters.status || initialFilters.status || "rent");
@@ -306,7 +316,19 @@ export default function FilterSidebar({
     // On initial mount or when syncing from external prop, don't reset ranges if we already have them
     if (skipInitialRangeReset.current) {
       skipInitialRangeReset.current = false;
-      setFilters(prev => ({ ...prev, status: newStatus }));
+      setFilters(prev => {
+        const updated = { ...prev, status: newStatus };
+        // Sync strings if we have ranges
+        if (currentFilters.rentRange) {
+          updated.rentMin = String(currentFilters.rentRange[0]);
+          updated.rentMax = String(currentFilters.rentRange[1]);
+        }
+        if (currentFilters.budgetRange) {
+          updated.budgetMin = String(currentFilters.budgetRange[0]);
+          updated.budgetMax = String(currentFilters.budgetRange[1]);
+        }
+        return updated;
+      });
       // Also update customRange to match currentFilters if they exist
       if (statusTab === 0 || statusTab === 3) {
         if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
@@ -705,31 +727,33 @@ export default function FilterSidebar({
                 <Slider
                   value={customRange || [0, 0]}
                   onChange={(e, newValue) => {
-                   
                     setCustomRange(newValue);
-
-                    if (statusTab === 2 || statusTab === 3) {
+                    if (statusTab === 0 || statusTab === 3) {
                       setFilters((prev) => ({
                         ...prev,
-                        minPrice: Number(newValue[0]),
-                        maxPrice: Number(newValue[1]),
-                        budgetRange: [Number(newValue[0]), Number(newValue[1])],
+                        rentRange: newValue,
+                        rentMin: String(newValue[0]),
+                        rentMax: String(newValue[1]),
+                      }));
+                    } else {
+                      setFilters((prev) => ({
+                        ...prev,
+                        budgetRange: newValue,
+                        budgetMin: String(newValue[0]),
+                        budgetMax: String(newValue[1]),
+                        minPrice: String(newValue[0]),
+                        maxPrice: String(newValue[1]),
                       }));
                     }
                   }}
                   onChangeCommitted={(e, newValue) => {
-                 
-                    setFilters((prev) => ({
-                      ...prev,
-                      minPrice: Number(newValue[0]),
-                      maxPrice: Number(newValue[1]),
-                      budgetRange: [Number(newValue[0]), Number(newValue[1])],
-                    }));
+                    handleSearchClick();
                   }}
-                  valueLabelDisplay="off"
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => `₹${value.toLocaleString()}`}
                   min={0}
-                  max={30000000}
-                  step={5000}
+                  max={statusTab === 0 || statusTab === 3 ? 500000 : 30000000}
+                  step={statusTab === 0 || statusTab === 3 ? 500 : 10000}
                   sx={{
                     color: "#1976d2",
                     "& .MuiSlider-thumb": {
@@ -769,7 +793,7 @@ export default function FilterSidebar({
                     />
                   </Box>
                   <Grid container spacing={2}>
-                    <Grid item xs={6}>
+                    <Grid item xs={12}>
                       <PriceInput
                         fullWidth
                         size="small"
@@ -783,9 +807,10 @@ export default function FilterSidebar({
                             <InputAdornment position="start">₹</InputAdornment>
                           ),
                         }}
+                        sx={{ mb: 1 }}
                       />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={12}>
                       <PriceInput
                         fullWidth
                         size="small"

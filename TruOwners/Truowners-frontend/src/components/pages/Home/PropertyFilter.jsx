@@ -35,7 +35,7 @@ const bedroomOptions = [
 ];
 
 const defaultFilters = {
-  status: "",
+  status: "rent",
   propertyType: "",
   city: "",
   bedrooms: "",
@@ -137,24 +137,27 @@ export default function PropertyFilter({
     ...initialFilters,
   }));
 
-  // Map status to tab index (0=ALL, 1=RENT, 2=SALE, 3=LEASE, 4=COMMERCIAL)
+  // Map status to tab index (0=RENT, 1=SALE, 2=LEASE, 3=COMMERCIAL)
   const getStatusTabIndex = (status) => {
     switch (status) {
       case "rent":
-        return 1;
+        return 0;
       case "sale":
       case "sell":
-        return 2;
+        return 1;
       case "lease":
-        return 3;
+        return 2;
       case "commercial":
-        return 4;
+        return 3;
       default:
-        return 0; // Default to ALL STATUS
+        return 0; // Default to RENT
     }
   };
 
-  const [statusTab, setStatusTab] = useState(getStatusTabIndex(filters.status));
+  const [statusTab, setStatusTab] = useState(
+  getStatusTabIndex(filters.status || "rent")
+);
+
 
   const lastSearchRef = useRef("");
   const isInitialMount = useRef(true);
@@ -198,7 +201,7 @@ export default function PropertyFilter({
   const handleTabChange = (event, newValue) => {
     setStatusTab(newValue);
     // Backend expects 'sell' not 'sale'
-    const statusMap = ["All", "rent", "sell", "lease", "commercial"];
+    const statusMap = ["rent", "sell", "lease", "commercial"];
     const newStatus = statusMap[newValue];
     setFilters((prev) => ({ ...prev, status: newStatus }));
   };
@@ -212,7 +215,7 @@ export default function PropertyFilter({
     );
 
     // Use 'status' key for URL params to match Properties.jsx expectation
-    if (filters.status && filters.status !== "All") {
+    if (filters.status) {
       params.append("status", filters.status);
     }
     if (filters.propertyType)
