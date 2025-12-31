@@ -46,7 +46,7 @@ const getAllProperties = async (req, res) => {
       const listingType = req.query.listingType;
 
       // For rent/commercial listings, filter by rent field
-      if (listingType === 'rent' || listingType === 'commercial') {
+      if (listingType === "rent" || listingType === "commercial") {
         filterQuery.rent = {};
         if (req.query.minBudget) {
           filterQuery.rent.$gte = parseInt(req.query.minBudget);
@@ -56,7 +56,7 @@ const getAllProperties = async (req, res) => {
         }
       }
       // For sell/lease listings, filter by price field
-      else if (listingType === 'sell' || listingType === 'lease') {
+      else if (listingType === "sell" || listingType === "lease") {
         filterQuery.price = {};
         if (req.query.minBudget) {
           filterQuery.price.$gte = parseInt(req.query.minBudget);
@@ -78,10 +78,7 @@ const getAllProperties = async (req, res) => {
         if (!filterQuery.$or) {
           filterQuery.$or = [];
         }
-        filterQuery.$or.push(
-          { rent: budgetFilter },
-          { price: budgetFilter }
-        );
+        filterQuery.$or.push({ rent: budgetFilter }, { price: budgetFilter });
       }
     }
 
@@ -136,11 +133,24 @@ const getAllProperties = async (req, res) => {
       filterQuery.amenities = { $in: amenitiesArray };
     }
 
+    // Helper function for fuzzy search (flexible spacing)
+    const createFuzzyRegex = (text) => {
+      if (!text) return null;
+      // Remove all whitespace from the search term
+      const cleanText = text.replace(/\s+/g, "");
+      // Escape special characters and insert \s* between every character to allow for flexible spacing
+      const fuzzyPattern = cleanText
+        .split("")
+        .map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("\\s*");
+      return { $regex: fuzzyPattern, $options: "i" };
+    };
+
     // Location and search filters
     const searchConditions = [];
 
     if (req.query.city) {
-      const cityRegex = { $regex: req.query.city, $options: "i" };
+      const cityRegex = createFuzzyRegex(req.query.city);
       searchConditions.push({
         $or: [
           { "location.city": cityRegex },
@@ -151,21 +161,27 @@ const getAllProperties = async (req, res) => {
 
     if (req.query.address) {
       searchConditions.push({
-        "location.address": { $regex: req.query.address, $options: "i" },
+        "location.address": createFuzzyRegex(req.query.address),
       });
     }
 
     if (req.query.state) {
       searchConditions.push({
-        "location.state": { $regex: req.query.state, $options: "i" },
+        "location.state": createFuzzyRegex(req.query.state),
       });
     }
 
-    // Text search filter (searches in title and description)
+    // Text search filter (searches in title, description, and location)
     if (req.query.search) {
-      const searchRegex = { $regex: req.query.search, $options: "i" };
+      const searchRegex = createFuzzyRegex(req.query.search);
       searchConditions.push({
-        $or: [{ title: searchRegex }, { description: searchRegex }],
+        $or: [
+          { title: searchRegex },
+          { description: searchRegex },
+          { "location.city": searchRegex },
+          { "location.address": searchRegex },
+          { "location.state": searchRegex },
+        ],
       });
     }
 
@@ -253,10 +269,10 @@ const getAllProperties = async (req, res) => {
           status: property.status,
           owner: property.owner
             ? {
-              id: property.owner._id,
-              name: property.owner.name,
-              phone: property.owner.phone,
-            }
+                id: property.owner._id,
+                name: property.owner.name,
+                phone: property.owner.phone,
+              }
             : null,
           createdAt: property.createdAt,
           updatedAt: property.updatedAt,
@@ -770,34 +786,34 @@ const getUserWishlist = async (req, res) => {
 
     const wishlistData = wishlist
       ? {
-        id: wishlist._id,
-        user: wishlist.user,
-        properties: wishlist.properties.map((property) => ({
-          id: property._id,
-          title: property.title,
-          description: property.description,
-          location: property.location,
-          rent: property.rent,
-          deposit: property.deposit,
-          listingType: property.listingType,
-          price: property.price,
-          propertyType: property.propertyType,
-          bedrooms: property.bedrooms,
-          bathrooms: property.bathrooms,
-          area: property.area,
-          amenities: property.amenities,
-          images: property.images,
-          status: property.status,
-          createdAt: property.createdAt,
-        })),
-        totalItems: wishlist.properties.length,
-        createdAt: wishlist.createdAt,
-        updatedAt: wishlist.updatedAt,
-      }
+          id: wishlist._id,
+          user: wishlist.user,
+          properties: wishlist.properties.map((property) => ({
+            id: property._id,
+            title: property.title,
+            description: property.description,
+            location: property.location,
+            rent: property.rent,
+            deposit: property.deposit,
+            listingType: property.listingType,
+            price: property.price,
+            propertyType: property.propertyType,
+            bedrooms: property.bedrooms,
+            bathrooms: property.bathrooms,
+            area: property.area,
+            amenities: property.amenities,
+            images: property.images,
+            status: property.status,
+            createdAt: property.createdAt,
+          })),
+          totalItems: wishlist.properties.length,
+          createdAt: wishlist.createdAt,
+          updatedAt: wishlist.updatedAt,
+        }
       : {
-        properties: [],
-        totalItems: 0,
-      };
+          properties: [],
+          totalItems: 0,
+        };
 
     res.status(200).json({
       statusCode: 200,
