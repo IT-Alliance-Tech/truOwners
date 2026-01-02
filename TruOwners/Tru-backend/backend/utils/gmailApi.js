@@ -7,6 +7,13 @@ async function sendMailHTTP({ to, subject, text, html, from }) {
   const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
   const gmailUser = process.env.GMAIL_USER;
 
+  console.log("ENV CHECK:", {
+    clientId: !!process.env.GMAIL_CLIENT_ID,
+    clientSecret: !!process.env.GMAIL_CLIENT_SECRET,
+    refreshToken: !!process.env.GMAIL_REFRESH_TOKEN,
+    gmailUser: !!process.env.GMAIL_USER,
+  });
+
   if (!clientId || !clientSecret || !refreshToken || !gmailUser) {
     console.error(
       "❌ Gmail OAuth2 credentials missing in environment variables!"
