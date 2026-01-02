@@ -352,69 +352,22 @@ const getPropertyById = async (req, res) => {
       bookedByCurrentUser: !!(b.user && b.user.toString() === userId),
     }));
 
-    // target count
+    // --- RANDOMIZED SIMILAR PROPERTIES ---
+    // Target: matching listingType, same city if possible, but strictly same listingType
     const SIMILAR_LIMIT = 5;
-    let candidates = [];
 
-    // step 1: same city + rent range
-    // step 1: same city + rent/price range
-    let priceOrRent =
-      property.listingType === "rent" ? property.rent : property.price;
-    const fieldToCheck = property.listingType === "rent" ? "rent" : "price";
-
-    const rangeFilter = {};
-    if (priceOrRent) {
-      rangeFilter[fieldToCheck] = {
-        $gte: priceOrRent * 0.8,
-        $lte: priceOrRent * 1.2,
-      };
-    }
-
-    candidates = await Property.find({
+    // Fetch a larger pool of candidates (e.g., 20) to shuffle
+    let candidates = await Property.find({
       _id: { $ne: property._id },
-      "location.city": property.location.city,
-      propertyType: property.propertyType,
       listingType: property.listingType,
-      ...rangeFilter,
       status: "published",
-    }).lean();
+    })
+      .limit(20)
+      .lean();
 
-    // step 2: same city (ignore rent) if fewer than 5
-    if (candidates.length < SIMILAR_LIMIT) {
-      const extra = await Property.find({
-        _id: { $ne: property._id },
-        "location.city": property.location.city,
-        propertyType: property.propertyType,
-        listingType: property.listingType,
-        status: "published",
-      }).lean();
-
-      candidates = [...candidates, ...extra];
-    }
-
-    // step 3: any city (fallback) if still fewer than 5
-    if (candidates.length < SIMILAR_LIMIT) {
-      const extra = await Property.find({
-        _id: { $ne: property._id },
-        propertyType: property.propertyType,
-        listingType: property.listingType,
-        status: "published",
-      }).lean();
-
-      candidates = [...candidates, ...extra];
-    }
-
-    // sort by rent difference (closest first)
-    // sort by price/rent difference (closest first)
-    candidates = candidates.sort((a, b) => {
-      const valA = a[fieldToCheck] || 0;
-      const valB = b[fieldToCheck] || 0;
-      const target = priceOrRent || 0;
-      return Math.abs(valA - target) - Math.abs(valB - target);
-    });
-
-    // take top 5
-    const similarProperties = candidates.slice(0, SIMILAR_LIMIT);
+    // Shuffle using Fisher-Yates or simple sort
+    const shuffled = candidates.sort(() => 0.5 - Math.random());
+    const similarProperties = shuffled.slice(0, SIMILAR_LIMIT);
 
     res.status(200).json({
       statusCode: 200,
@@ -918,6 +871,8 @@ const removeFromWishlist = async (req, res) => {
     });
   }
 };
+
+// Get property by ID (for details page)
 
 module.exports = {
   getAllProperties,

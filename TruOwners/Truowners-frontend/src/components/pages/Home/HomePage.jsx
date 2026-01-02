@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { useWishlist } from "../../../context/Wishlist";
 import { buildApiUrl, API_CONFIG } from "../../../config/api";
 import {
   handleApiError,
@@ -159,17 +160,37 @@ const HomePage = () => {
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
   const navigate = useNavigate();
+  const { user, isAuthenticated, token, isSubscribed } = useAuth();
+  const { setWishlist: setGlobalWishlist, toggle: toggleGlobalWishlist } =
+    useWishlist();
   const tabs = ["Rent", "Buy", "Sell", "Commercial"];
   const [showAll, setShowAll] = useState(false);
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [wishlist, setWishlist] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showPropertyDetails, setShowPropertyDetails] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    location: "",
+    city: "",
+    state: "",
+    propertyType: "all",
+    priceRange: { min: 0, max: 100000 },
+    bedrooms: "any",
+    bathrooms: "any",
+    amenities: [],
+    minArea: "",
+    maxArea: "",
+  });
 
   const [inquiryForm, setInquiryForm] = useState({
     name: "",
@@ -257,24 +278,7 @@ const HomePage = () => {
     }
   };
 
-  const [wishlist, setWishlist] = useState([]);
-  // Update the initial filters state in HomePage.jsx
-  const [filters, setFilters] = useState({
-    searchTerm: "",
-    location: "",
-    city: "",
-    state: "",
-    propertyType: "all",
-    priceRange: { min: 0, max: 100000 },
-    bedrooms: "any",
-    bathrooms: "any",
-    amenities: [],
-    minArea: "",
-    maxArea: "",
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const { user, isAuthenticated, token } = useAuth();
+  // Consolidated effects and logic
   useEffect(() => {
     fetchProperties();
     if (isAuthenticated) {
@@ -359,7 +363,11 @@ const HomePage = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setWishlist(data.data.wishlist || []);
+          const ids = (data.data.wishlist?.properties || []).map(
+            (item) => item.id
+          );
+          setWishlist(ids);
+          setGlobalWishlist(ids); // Sync with context
         }
       }
     } catch (err) {
@@ -367,23 +375,43 @@ const HomePage = () => {
     }
   };
   const handleWishlistToggle = async (propertyId) => {
+    // CRITICAL VALIDATION: Prevent object/event passing
+    if (typeof propertyId === "object" || !propertyId) {
+      console.error(
+        "❌ Invalid propertyId received in handleWishlistToggle:",
+        propertyId
+      );
+      return;
+    }
+
+    // Toggle wishlist item
+    console.log("🔥 handleWishlistToggle called with propertyId:", propertyId);
     if (!isAuthenticated) {
       setShowAuthPrompt(true);
       return;
     }
     try {
       const isInWishlist = wishlist.includes(propertyId);
+      const endpoint = isInWishlist
+        ? API_CONFIG.USER.WISHLIST_REMOVE
+        : API_CONFIG.USER.WISHLIST;
       const method = isInWishlist ? "DELETE" : "POST";
-      const response = await fetch(
-        buildApiUrl(`${API_CONFIG.USER.WISHLIST}/${propertyId}`),
-        {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+
+      console.log("🔥 Making API call:", {
+        url: buildApiUrl(endpoint),
+        method,
+        propertyId,
+        isInWishlist,
+      });
+
+      const response = await fetch(buildApiUrl(endpoint), {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ propertyId }),
+      });
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -392,6 +420,7 @@ const HomePage = () => {
           } else {
             setWishlist((prev) => [...prev, propertyId]);
           }
+          toggleGlobalWishlist(propertyId); // Sync with context
         }
       }
     } catch (err) {
@@ -840,9 +869,13 @@ const HomePage = () => {
                 >
                   <PropertyCard
                     property={property}
-                    // isInWishlist={wishlist.includes(property.id)}
-                    onWishlistToggle={() => handleWishlistToggle(property.id)}
-                    onClick={() => handlePropertyClick(property)}
+                    isInWishlist={wishlist.includes(
+                      property.id || property._id
+                    )}
+                    onWishlistToggle={() =>
+                      handleWishlistToggle(property.id || property._id)
+                    }
+                    onViewDetails={() => handlePropertyClick(property)}
                     onLoginRequired={handleLoginRequired}
                     isAuthenticated={isAuthenticated}
                     postType={property?.listingType ?? "Rent"}

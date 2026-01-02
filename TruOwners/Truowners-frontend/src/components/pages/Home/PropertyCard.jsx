@@ -93,15 +93,7 @@ const PropertyCard = ({
 
   const getSafeImages = (images) => {
     if (!Array.isArray(images)) return [];
-    return images.filter(
-      (img) =>
-        img &&
-        typeof img === "string" &&
-        img.trim() &&
-        !img.toLowerCase().includes("car") &&
-        !img.toLowerCase().includes("vehicle") &&
-        !img.toLowerCase().includes("auto")
-    );
+    return images.filter((img) => img && typeof img === "string" && img.trim());
   };
 
   const getPropertyId = () => {
