@@ -1,255 +1,251 @@
-import React, { useState } from 'react'
-import { useAuth } from '../../../context/AuthContext' // Add this import
-import OTPVerification from './OTPVerification'
-import { buildApiUrl, API_CONFIG } from '../../../config/api'
-import { uploadFile, generateFileName } from '../../../config/supabase'
-import { handleApiError, getErrorMessage, validateApiResponse } from '../../../utils/errorHandler'
-import './Auth.css'
+import React, { useState } from "react";
+import { useAuth } from "../../../context/AuthContext"; // Add this import
+import OTPVerification from "./OTPVerification";
+import { buildApiUrl, API_CONFIG } from "../../../config/api";
+import { uploadFile, generateFileName } from "../../../config/supabase";
+import {
+  handleApiError,
+  getErrorMessage,
+  validateApiResponse,
+} from "../../../utils/errorHandler";
+import "./Auth.css";
 
 const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
-  const [currentStep, setCurrentStep] = useState('signup') // 'signup' or 'otp'
+  const [currentStep, setCurrentStep] = useState("signup"); // 'signup' or 'otp'
   const [formData, setFormData] = useState({
-    firstname: '',
-    lastname: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'owner',
-    idProofNumber: '',
-    idProofType: 'Aadhar',
-    idProofImageUrl: ''
-  })
-  const [idProofFile, setIdProofFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [userEmail, setUserEmail] = useState('')
-  const { login } = useAuth() // Add this line
+    firstname: "",
+    lastname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "owner",
+    idProofNumber: "",
+    idProofType: "Aadhar",
+    idProofImageUrl: "",
+  });
+  const [idProofFile, setIdProofFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const { login } = useAuth(); // Add this line
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }))
+      [name]: value,
+    }));
     // Clear error when user starts typing
-    if (error) setError('')
-  }
+    if (error) setError("");
+  };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setError('Please upload a valid image file (JPEG, PNG, or WebP)')
-      return
+      setError("Please upload a valid image file (JPEG, PNG, or WebP)");
+      return;
     }
 
     // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-      setError('Image size must be less than 5MB')
-      return
+      setError("Image size must be less than 5MB");
+      return;
     }
 
-    setIdProofFile(file)
+    setIdProofFile(file);
 
     // Create preview
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      setImagePreview(event.target.result)
-    }
-    reader.readAsDataURL(file)
+      setImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
 
     // Clear any existing URL since we're now using file upload
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      idProofImageUrl: ''
-    }))
+      idProofImageUrl: "",
+    }));
 
-    if (error) setError('')
-  }
+    if (error) setError("");
+  };
 
   const removeImage = () => {
-    setIdProofFile(null)
-    setImagePreview('')
-    setFormData(prev => ({
+    setIdProofFile(null);
+    setImagePreview("");
+    setFormData((prev) => ({
       ...prev,
-      idProofImageUrl: ''
-    }))
-  }
+      idProofImageUrl: "",
+    }));
+  };
 
   const validateForm = () => {
     if (!formData.firstname.trim()) {
-      setError('First name is required')
-      return false
+      setError("First name is required");
+      return false;
     }
     if (!formData.email.trim()) {
-      setError('Email is required')
-      return false
+      setError("Email is required");
+      return false;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address')
-      return false
+      setError("Please enter a valid email address");
+      return false;
     }
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return false
+      setError("Password must be at least 8 characters long");
+      return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
+      setError("Passwords do not match");
+      return false;
     }
     if (!formData.idProofNumber.trim()) {
-      setError('ID proof number is required')
-      return false
+      setError("ID proof number is required");
+      return false;
     }
     if (!idProofFile && !formData.idProofImageUrl.trim()) {
-      setError('Please upload your ID proof image')
-      return false
+      setError("Please upload your ID proof image");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   // *THE MISSING FUNCTION* - handleSignUp
   const handleSignUp = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
     try {
       // Upload ID proof image first
-      let imageUrl = ''
+      let imageUrl = "";
       try {
-        imageUrl = await uploadIdProofImage()
+        imageUrl = await uploadIdProofImage();
       } catch (uploadError) {
-        throw new Error(`Image upload failed: ${uploadError.message}`)
+        throw new Error(`Image upload failed: ${uploadError.message}`);
       }
 
       const response = await fetch(buildApiUrl(API_CONFIG.AUTH.REGISTER), {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           firstName: formData.firstname,
           lastName: formData.lastname,
-          phone:formData.phone,
+          phone: formData.phone,
           email: formData.email,
           password: formData.password,
           role: formData.role,
           idProofNumber: formData.idProofNumber,
           idProofType: formData.idProofType,
-          idProofImageUrl: imageUrl
+          idProofImageUrl: imageUrl,
         }),
-      })
+      });
 
-      let data
+      let data;
       try {
-        data = await response.json()
-        validateApiResponse(data)
+        data = await response.json();
+        validateApiResponse(data);
       } catch (parseError) {
-        throw new Error('Invalid response from server')
+        throw new Error("Invalid response from server");
       }
 
       if (!response.ok) {
-        const errorMessage = handleApiError(null, response)
-        throw new Error(data.error.message || errorMessage)
+        const errorMessage = handleApiError(null, response);
+        throw new Error(data.error.message || errorMessage);
       }
 
       if (data.success) {
-        setUserEmail(formData.email)
-        setCurrentStep('otp')
+        setUserEmail(formData.email);
+        setCurrentStep("otp");
       } else {
-        throw new Error(getErrorMessage(data))
+        throw new Error(getErrorMessage(data));
       }
     } catch (err) {
-      console.error('Registration error:', err)
-
-      // Handle specific error cases
-      if (err.message.includes('email')) {
-        setError('This email is already registered. Please use a different email or try logging in.')
-      } else if (err.message.includes('network')) {
-        setError('Network error. Please check your connection and try again.')
-      } else if (err.message.includes('upload')) {
-        setError(err.message) // Show specific upload error
-      } else {
-        setError(err.message || 'Registration failed. Please try again.')
-      }
+      console.error("Registration error:", err);
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Update the uploadIdProofImage function:
   const uploadIdProofImage = async () => {
-    if (!idProofFile) return formData.idProofImageUrl
+    if (!idProofFile) return formData.idProofImageUrl;
 
-    setUploadingImage(true)
+    setUploadingImage(true);
 
     try {
-      const fileName = generateFileName(idProofFile.name, formData.email)
-      const uploadResult = await uploadFile(idProofFile, fileName)
+      const fileName = generateFileName(idProofFile.name, formData.email);
+      const uploadResult = await uploadFile(idProofFile, fileName);
 
       if (!uploadResult.success) {
-        throw new Error(uploadResult.error || 'Failed to upload image')
+        throw new Error(uploadResult.error || "Failed to upload image");
       }
 
       if (!uploadResult.url) {
-        throw new Error('Upload completed but no URL received')
+        throw new Error("Upload completed but no URL received");
       }
 
-      return uploadResult.url
+      return uploadResult.url;
     } catch (err) {
-      console.error('Image upload error:', err)
+      console.error("Image upload error:", err);
 
-      if (err.message.includes('size')) {
-        throw new Error('Image file is too large. Please use a smaller image.')
-      } else if (err.message.includes('type')) {
-        throw new Error('Invalid image format. Please use JPG, PNG, or WebP.')
-      } else if (err.message.includes('network')) {
-        throw new Error('Network error during upload. Please try again.')
+      if (err.message.includes("size")) {
+        throw new Error("Image file is too large. Please use a smaller image.");
+      } else if (err.message.includes("type")) {
+        throw new Error("Invalid image format. Please use JPG, PNG, or WebP.");
+      } else if (err.message.includes("network")) {
+        throw new Error("Network error during upload. Please try again.");
       } else {
-        throw new Error(err.message || 'Image upload failed. Please try again.')
+        throw new Error(
+          err.message || "Image upload failed. Please try again."
+        );
       }
     } finally {
-      setUploadingImage(false)
+      setUploadingImage(false);
     }
-  }
+  };
 
   // Updated handleOTPSuccess to accept userData and token as separate parameters
   const handleOTPSuccess = (userData, token) => {
-    console.log('Owner verified and logged in successfully!')
-    console.log('User data:', userData)
-    console.log('Token exists:', !!token)
+    console.log("Owner verified and logged in successfully!");
+    console.log("User data:", userData);
+    console.log("Token exists:", !!token);
 
     // Store user in auth context just like in Login and SignUp
-    login(userData, token)
+    login(userData, token);
 
     // Close the owner signup modal since user is now logged in
     if (onClose) {
-      onClose()
+      onClose();
     }
-  }
+  };
 
   const handleBackToSignUp = () => {
-    setCurrentStep('signup')
-    setError('')
-  }
+    setCurrentStep("signup");
+    setError("");
+  };
 
   // Handle OTP verification step
-  if (currentStep === 'otp') {
+  if (currentStep === "otp") {
     if (!userEmail) {
-      console.error('No email available for OTP verification')
-      setCurrentStep('signup')
-      setError('Email is required for verification. Please try again.')
-      return null
+      console.error("No email available for OTP verification");
+      setCurrentStep("signup");
+      setError("Email is required for verification. Please try again.");
+      return null;
     }
 
     return (
@@ -259,19 +255,20 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
         onBack={handleBackToSignUp}
         onClose={onClose}
       />
-    )
+    );
   }
 
   return (
     <div className="auth-overlay">
       <div className="auth-modal owner-signup-modal">
         {onClose && (
-          <button className="auth-close" onClick={onClose}>×</button>
+          <button className="auth-close" onClick={onClose}>
+            ×
+          </button>
         )}
         <div className="auth-header">
           <h2>Join as Property Owner</h2>
           <p>List your properties and reach thousands of potential tenants</p>
-
         </div>
 
         <form className="auth-form" onSubmit={handleSignUp}>
@@ -282,8 +279,7 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
             </div>
           )}
 
-          <div >
-
+          <div>
             <div>
               <div className="form-row">
                 <div className="form-group">
@@ -311,8 +307,6 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                     required
                   />
                 </div>
-
-              
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -327,7 +321,7 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                     required
                   />
                 </div>
-                  <div className="form-group">
+                <div className="form-group">
                   <label htmlFor="phone">Phone Number *</label>
                   <input
                     type="number"
@@ -339,7 +333,6 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                     required
                   />
                 </div>
-               
               </div>
 
               <div className="form-row">
@@ -375,10 +368,11 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
             </div>
 
             <div>
-
               <div className="form-section">
                 <h3 className="section-title">Identity Verification</h3>
-                <p className="section-subtitle">We need to verify your identity to ensure platform security</p>
+                <p className="section-subtitle">
+                  We need to verify your identity to ensure platform security
+                </p>
 
                 <div className="form-row">
                   <div className="form-group">
@@ -425,7 +419,10 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                         onChange={handleFileChange}
                         className="file-input"
                       />
-                      <label htmlFor="idProofImage" className="file-upload-label">
+                      <label
+                        htmlFor="idProofImage"
+                        className="file-upload-label"
+                      >
                         <div className="upload-icon">📎</div>
                         <div className="upload-text">
                           <strong>Click to upload</strong> or drag and drop
@@ -451,7 +448,9 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                       <button
                         type="button"
                         className="change-image-btn"
-                        onClick={() => document.getElementById('idProofImage').click()}
+                        onClick={() =>
+                          document.getElementById("idProofImage").click()
+                        }
                       >
                         Change Image
                       </button>
@@ -461,13 +460,14 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                         accept="image/*"
                         onChange={handleFileChange}
                         className="file-input"
-                        style={{ display: 'none' }}
+                        style={{ display: "none" }}
                       />
                     </div>
                   )}
 
                   <small className="form-hint">
-                    Please ensure the image is clear and all details are readable
+                    Please ensure the image is clear and all details are
+                    readable
                   </small>
                 </div>
               </div>
@@ -488,17 +488,16 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
                     Creating Account...
                   </>
                 ) : (
-                  'Create Owner Account'
+                  "Create Owner Account"
                 )}
               </button>
             </div>
           </div>
-
         </form>
 
         <div className="auth-footer">
           <p>
-            Already have an account?{' '}
+            Already have an account?{" "}
             <button
               className="auth-link"
               onClick={onSwitchToLogin}
@@ -510,7 +509,7 @@ const OwnerSignUp = ({ onClose, onSwitchToLogin }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default OwnerSignUp
+export default OwnerSignUp;
