@@ -1,36 +1,51 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from '../../../context/AuthContext'
-import { buildApiUrl, API_CONFIG } from '../../../config/api'
-import { handleApiError, getErrorMessage, validateApiResponse } from '../../../utils/errorHandler'
-import PropertyCard from './PropertyCard'
-import PropertyFilters from './PropertyFilters'
-import AuthPromptModal from './AuthPromptModal'
-import Login from '../Auth/Login'
-import Register from '../Auth/SignUp'
-import PropertyDetailsModal from './PropertyDetailsModal'
-import SubscriptionAdBanner from './SubscriptionAdBanner'
-import './HomePage.css'
-import CountUp from 'react-countup';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
-import { Navigation } from 'swiper/modules';
+import { useAuth } from "../../../context/AuthContext";
+import { useWishlist } from "../../../context/Wishlist";
+import { buildApiUrl, API_CONFIG } from "../../../config/api";
+import {
+  handleApiError,
+  getErrorMessage,
+  validateApiResponse,
+} from "../../../utils/errorHandler";
+import PropertyCard from "./PropertyCard";
+import PropertyFilters from "./PropertyFilters";
+import AuthPromptModal from "./AuthPromptModal";
+import Login from "../Auth/Login";
+import Register from "../Auth/SignUp";
+import PropertyDetailsModal from "./PropertyDetailsModal";
+import SubscriptionAdBanner from "./SubscriptionAdBanner";
+import "./HomePage.css";
+import CountUp from "react-countup";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination, Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/navigation";
+import { Navigation } from "swiper/modules";
 import { FaArrowRight } from "react-icons/fa";
-import { Box, Grid, Typography, Card, CardMedia, CardContent, Button } from "@mui/material";
+import {
+  Box,
+  Grid,
+  Typography,
+  Card,
+  CardMedia,
+  CardContent,
+  Button,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { motion } from "framer-motion";
-import villaImg from '/src/assets/images/villa.jpg'
-import aprtmentImg from '/src/assets/images/apartment.jpg'
-import singleImg from '/src/assets/images/single.jpg'
-import studioImg from '/src/assets/images/studio.jpg'
-import shopImg from '/src/assets/images/shop.jpg'
-import officeImg from '/src/assets/images/office.jpg'
-import indepenImg from '/src/assets/images/indepen.jpg'
-import truOwnersLogo from '../../../assets/images/logo-Copy.jpg';
-import icon1 from '../../../assets/images/Icon(1).png';
-import icon2 from '../../../assets/images/Icon(2).png';
-import icon3 from '../../../assets/images/Icon(3).png';
+import villaImg from "/src/assets/images/villa.jpg";
+import aprtmentImg from "/src/assets/images/apartment.jpg";
+import singleImg from "/src/assets/images/single.jpg";
+import studioImg from "/src/assets/images/studio.jpg";
+import shopImg from "/src/assets/images/shop.jpg";
+import officeImg from "/src/assets/images/office.jpg";
+import indepenImg from "/src/assets/images/indepen.jpg";
+import truOwnersLogo from "../../../assets/images/logo-Copy.jpg";
+import icon1 from "../../../assets/images/Icon(1).png";
+import icon2 from "../../../assets/images/Icon(2).png";
+import icon3 from "../../../assets/images/Icon(3).png";
 // import Button from '@mui/material/Button';
 // import AddAlertIcon from '@mui/icons-material/AddAlert';
 // import AccountCircleSharp from '@mui/icons-material/AccountCircleSharp';
@@ -41,18 +56,18 @@ import "slick-carousel/slick/slick-theme.css";
 // import React, { useState, useEffect, useRef } from "react";
 import { Container } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import per2 from '../../../assets/images/2.png';
-import per1 from '../../../assets/images/1.png';
-import per3 from '../../../assets/images/3.png';
-import per4 from '../../../assets/images/4.png';
-import per5 from '../../../assets/images/5.png';
+import per2 from "../../../assets/images/2.png";
+import per1 from "../../../assets/images/1.png";
+import per3 from "../../../assets/images/3.png";
+import per4 from "../../../assets/images/4.png";
+import per5 from "../../../assets/images/5.png";
 const Counter = ({ target, label }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
     const observer = new IntersectionObserver(
-      entries => {
+      (entries) => {
         if (entries[0].isIntersecting) {
           setIsVisible(true);
         }
@@ -96,144 +111,234 @@ const properties = [
 ];
 const testimonials = [
   {
-    name: 'Rahul Mehta',
-    role: 'Tenant, Jayanagar',
-    text: 'House hunting in Bangalore used to be exhausting until I found TruOwners. The platform’s filters helped me find exactly what I was looking for, and within a week, I got my perfect 2BHK — without paying a single rupee in brokerage. The listings were genuine, and the owner I contacted was polite and transparent. The whole experience saved me time, money, and stress. I’ll definitely use TruOwners again in the future!',
+    name: "Rahul Mehta",
+    role: "Tenant, Jayanagar",
+    text: "House hunting in Bangalore used to be exhausting until I found TruOwners. The platform’s filters helped me find exactly what I was looking for, and within a week, I got my perfect 2BHK — without paying a single rupee in brokerage. The listings were genuine, and the owner I contacted was polite and transparent. The whole experience saved me time, money, and stress. I’ll definitely use TruOwners again in the future!",
     image: per1,
   },
   {
-    name: 'Sneha Reddy',
-    role: 'Landlord, Electronic City',
-    text: 'When I had to move my family from Nagpur to Pune, I was worried about the hassle of finding a good home. TruOwners made the process incredibly smooth. Their relationship manager guided me from start to finish, helping me shortlist flats, arrange visits, and even get the rental agreement done. There were no hidden charges, and I only dealt with genuine property owners. It saved me from the headache of brokers completely!',
+    name: "Sneha Reddy",
+    role: "Landlord, Electronic City",
+    text: "When I had to move my family from Nagpur to Pune, I was worried about the hassle of finding a good home. TruOwners made the process incredibly smooth. Their relationship manager guided me from start to finish, helping me shortlist flats, arrange visits, and even get the rental agreement done. There were no hidden charges, and I only dealt with genuine property owners. It saved me from the headache of brokers completely!",
     image: per2,
   },
   {
-    name: 'Vikram Sharma',
-    role: 'Tenant, Whitefield',
-    text: 'As a student, finding an affordable and safe place near my college was tough — until I used TruOwners. Within just two days, I found a PG that fit my budget perfectly. The entire process was transparent, quick, and stress-free. I didn’t have to deal with any random broker calls or inflated prices. TruOwners is a real lifesaver for students like me who want a straightforward and affordable rental experience.',
+    name: "Vikram Sharma",
+    role: "Tenant, Whitefield",
+    text: "As a student, finding an affordable and safe place near my college was tough — until I used TruOwners. Within just two days, I found a PG that fit my budget perfectly. The entire process was transparent, quick, and stress-free. I didn’t have to deal with any random broker calls or inflated prices. TruOwners is a real lifesaver for students like me who want a straightforward and affordable rental experience.",
     image: per3,
   },
   {
-    name: 'Ananya Iyer',
-    role: 'Tenant, Indiranagar',
-    text: 'I’ve tried several property portals before, but TruOwners stands out because it only connects you to verified owners. I didn’t receive any spam calls or have to deal with pushy agents. I directly spoke with the property owner, negotiated a fair rent, and closed the deal within a few days. The process saved me a lot of time and money, and I would recommend it to anyone who wants a genuine, broker-free experience.',
+    name: "Ananya Iyer",
+    role: "Tenant, Indiranagar",
+    text: "I’ve tried several property portals before, but TruOwners stands out because it only connects you to verified owners. I didn’t receive any spam calls or have to deal with pushy agents. I directly spoke with the property owner, negotiated a fair rent, and closed the deal within a few days. The process saved me a lot of time and money, and I would recommend it to anyone who wants a genuine, broker-free experience.",
     image: per5,
   },
   {
-    name: 'Amitabh Singh',
-    role: 'Landlord, Koramangala',
-    text: 'We were looking to rent out our apartment without going through agents, and TruOwners was the perfect solution. Within just 4 days, we found verified tenants who met all our requirements. The listing process was simple, the tenants were genuine, and the platform handled everything smoothly. Best of all, we saved on heavy brokerage fees. It was a stress-free experience, and we’ll definitely use TruOwners again when needed.',
+    name: "Amitabh Singh",
+    role: "Landlord, Koramangala",
+    text: "We were looking to rent out our apartment without going through agents, and TruOwners was the perfect solution. Within just 4 days, we found verified tenants who met all our requirements. The listing process was simple, the tenants were genuine, and the platform handled everything smoothly. Best of all, we saved on heavy brokerage fees. It was a stress-free experience, and we’ll definitely use TruOwners again when needed.",
     image: per4,
   },
 ];
 const HomePage = () => {
   const sliderSettings = {
-    dots: true,           // show navigation dots
-    infinite: true,       // loop slides
-    speed: 500,           // transition speed
-    slidesToShow: 2,      // number of slides visible
-    slidesToScroll: 1,    // slides per scroll
-    autoplay: true,       // enable autoplay
-    autoplaySpeed: 2000,  // 2 seconds per slide
-    arrows: true,        // hide arrows if you want
+    dots: true, // show navigation dots
+    infinite: true, // loop slides
+    speed: 500, // transition speed
+    slidesToShow: 2, // number of slides visible
+    slidesToScroll: 1, // slides per scroll
+    autoplay: true, // enable autoplay
+    autoplaySpeed: 2000, // 2 seconds per slide
+    arrows: true, // hide arrows if you want
     responsive: [
       { breakpoint: 1024, settings: { slidesToShow: 2 } },
       { breakpoint: 640, settings: { slidesToShow: 1 } },
-    ]
+    ],
   };
   const [activeTab, setActiveTab] = useState("Rent");
   const [location, setLocation] = useState("");
   const [date, setDate] = useState("");
   const navigate = useNavigate();
+  const { user, isAuthenticated, token, isSubscribed } = useAuth();
+  const { setWishlist: setGlobalWishlist, toggle: toggleGlobalWishlist } =
+    useWishlist();
   const tabs = ["Rent", "Buy", "Sell", "Commercial"];
   const [showAll, setShowAll] = useState(false);
-  const [properties, setProperties] = useState([])
-  const [filteredProperties, setFilteredProperties] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
-  const [showLogin, setShowLogin] = useState(false)
-  const [showRegister, setShowRegister] = useState(false)
-  const [showPropertyDetails, setShowPropertyDetails] = useState(false)
-  const [selectedProperty, setSelectedProperty] = useState(null)
-  const [wishlist, setWishlist] = useState([])
-  // Update the initial filters state in HomePage.jsx
+  const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [wishlist, setWishlist] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showPropertyDetails, setShowPropertyDetails] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    location: '',
-    city: '',
-    state: '',
-    propertyType: 'all',
+    searchTerm: "",
+    location: "",
+    city: "",
+    state: "",
+    propertyType: "all",
     priceRange: { min: 0, max: 100000 },
-    bedrooms: 'any',
-    bathrooms: 'any',
+    bedrooms: "any",
+    bathrooms: "any",
     amenities: [],
-    minArea: '',
-    maxArea: ''
+    minArea: "",
+    maxArea: "",
   });
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('newest')
-  const { user, isAuthenticated, token } = useAuth()
-  useEffect(() => {
-    fetchProperties()
-    if (isAuthenticated) {
-      fetchWishlist()
+
+  const [inquiryForm, setInquiryForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+    interestedIn: "",
+    agreed: false,
+  });
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") return;
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleInquiryChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setInquiryForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleInquirySubmit = async (e) => {
+    e.preventDefault();
+    if (!inquiryForm.agreed) {
+      setSnackbar({
+        open: true,
+        message: "Please agree to the Terms of Use",
+        severity: "warning",
+      });
+      return;
     }
-  }, [isAuthenticated])
+
+    try {
+      const response = await fetch(buildApiUrl(API_CONFIG.USER.INQUIRIES), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: inquiryForm.name,
+          email: inquiryForm.email,
+          phone: inquiryForm.phone,
+          message: inquiryForm.message,
+          interestedIn: inquiryForm.interestedIn,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSnackbar({
+          open: true,
+          message: "Thank you! Your message has been sent successfully.",
+          severity: "success",
+        });
+        setInquiryForm({
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+          interestedIn: "",
+          agreed: false,
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: data.error || "Failed to send message.",
+          severity: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Inquiry form error:", error);
+      setSnackbar({
+        open: true,
+        message: "Something went wrong. Please try again later.",
+        severity: "error",
+      });
+    }
+  };
+
+  // Consolidated effects and logic
   useEffect(() => {
-    console.log('Total properties from API:', properties.length);
-    console.log('Filtered properties:', filteredProperties.length);
-    console.log('Properties data:', properties);
+    fetchProperties();
+    if (isAuthenticated) {
+      fetchWishlist();
+    }
+  }, [isAuthenticated]);
+  useEffect(() => {
+    console.log("Total properties from API:", properties.length);
+    console.log("Filtered properties:", filteredProperties.length);
+    console.log("Properties data:", properties);
   }, [properties, filteredProperties]);
   useEffect(() => {
     if (isAuthenticated) {
-      const propertyToView = localStorage.getItem('propertyToView')
+      const propertyToView = localStorage.getItem("propertyToView");
       if (propertyToView) {
-        localStorage.removeItem('propertyToView')
+        localStorage.removeItem("propertyToView");
         // Navigate to property details page instead of showing modal
-        window.open(`/property/${propertyToView}`, '_blank')
+        window.open(`/property/${propertyToView}`, "_blank");
       }
     }
-  }, [isAuthenticated, properties])
+  }, [isAuthenticated, properties]);
   useEffect(() => {
-    applyFilters()
-  }, [properties, filters, searchTerm, sortBy])
+    applyFilters();
+  }, [properties, filters, searchTerm, sortBy]);
   const fetchProperties = async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
     try {
       const headers = {
-        'Content-Type': 'application/json'
-      }
+        "Content-Type": "application/json",
+      };
       if (isAuthenticated && token) {
-        headers['Authorization'] = `Bearer ${token}`
+        headers["Authorization"] = `Bearer ${token}`;
       }
       const response = await fetch(buildApiUrl(API_CONFIG.USER.PROPERTIES), {
-        method: 'GET',
-        headers
-      })
-      let data
+        method: "GET",
+        headers,
+      });
+      let data;
       try {
-        data = await response.json()
-        validateApiResponse(data)
+        data = await response.json();
+        validateApiResponse(data);
       } catch (parseError) {
-        throw new Error('Invalid response from server')
+        throw new Error("Invalid response from server");
       }
       if (!response.ok) {
-        throw new Error(data.error || handleApiError(null, response))
+        throw new Error(data.error || handleApiError(null, response));
       }
       if (data.success) {
-        setProperties(data.data.properties || [])
+        setProperties(data.data.properties || []);
       } else {
-        throw new Error(getErrorMessage(data))
+        throw new Error(getErrorMessage(data));
       }
     } catch (err) {
-      console.error('Fetch properties error:', err)
-      setError(err.message || 'Failed to load properties. Please try again.')
+      console.error("Fetch properties error:", err);
+      setError(err.message || "Failed to load properties. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   const handleSearch = () => {
     console.log("Property Type:", filters.propertyType);
     console.log("Bedrooms:", filters.bedrooms);
@@ -245,146 +350,198 @@ const HomePage = () => {
     );
   };
   const fetchWishlist = async () => {
-    if (!isAuthenticated || !token) return
+    if (!isAuthenticated || !token) return;
 
     try {
       const response = await fetch(buildApiUrl(API_CONFIG.USER.WISHLIST), {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      })
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         if (data.success) {
-          setWishlist(data.data.wishlist || [])
+          const ids = (data.data.wishlist?.properties || []).map(
+            (item) => item.id
+          );
+          setWishlist(ids);
+          setGlobalWishlist(ids); // Sync with context
         }
       }
     } catch (err) {
-      console.warn('Failed to fetch wishlist:', err)
+      console.warn("Failed to fetch wishlist:", err);
     }
-  }
+  };
   const handleWishlistToggle = async (propertyId) => {
+    // CRITICAL VALIDATION: Prevent object/event passing
+    if (typeof propertyId === "object" || !propertyId) {
+      console.error(
+        "❌ Invalid propertyId received in handleWishlistToggle:",
+        propertyId
+      );
+      return;
+    }
+
+    // Toggle wishlist item
+    console.log("🔥 handleWishlistToggle called with propertyId:", propertyId);
     if (!isAuthenticated) {
-      setShowAuthPrompt(true)
-      return
+      setShowAuthPrompt(true);
+      return;
     }
     try {
-      const isInWishlist = wishlist.includes(propertyId)
-      const method = isInWishlist ? 'DELETE' : 'POST'
-      const response = await fetch(buildApiUrl(`${API_CONFIG.USER.WISHLIST}/${propertyId}`), {
+      const isInWishlist = wishlist.includes(propertyId);
+      const endpoint = isInWishlist
+        ? API_CONFIG.USER.WISHLIST_REMOVE
+        : API_CONFIG.USER.WISHLIST;
+      const method = isInWishlist ? "DELETE" : "POST";
+
+      console.log("🔥 Making API call:", {
+        url: buildApiUrl(endpoint),
+        method,
+        propertyId,
+        isInWishlist,
+      });
+
+      const response = await fetch(buildApiUrl(endpoint), {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      })
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ propertyId }),
+      });
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         if (data.success) {
           if (isInWishlist) {
-            setWishlist(prev => prev.filter(id => id !== propertyId))
+            setWishlist((prev) => prev.filter((id) => id !== propertyId));
           } else {
-            setWishlist(prev => [...prev, propertyId])
+            setWishlist((prev) => [...prev, propertyId]);
           }
+          toggleGlobalWishlist(propertyId); // Sync with context
         }
       }
     } catch (err) {
-      console.error('Wishlist toggle error:', err)
+      console.error("Wishlist toggle error:", err);
     }
-  }
+  };
   const handlePropertyClick = (property) => {
-    setSelectedProperty(property)
-    setShowPropertyDetails(true)
-  }
+    setSelectedProperty(property);
+    setShowPropertyDetails(true);
+  };
   // NEW: Handle login requirement for view details
   const handleLoginRequired = () => {
-    setShowLogin(true)
-  }
+    setShowLogin(true);
+  };
   // NEW: Handle successful login
   const handleAuthSuccess = () => {
-    setShowLogin(false)
-    setShowRegister(false)
-    setShowAuthPrompt(false)
-  }
+    setShowLogin(false);
+    setShowRegister(false);
+    setShowAuthPrompt(false);
+  };
   // NEW: Switch between login and register
   const handleSwitchToRegister = () => {
-    setShowLogin(false)
-    setShowRegister(true)
-  }
+    setShowLogin(false);
+    setShowRegister(true);
+  };
   const handleSwitchToLogin = () => {
-    setShowRegister(false)
-    setShowLogin(true)
-  }
+    setShowRegister(false);
+    setShowLogin(true);
+  };
   // Update the applyFilters function in HomePage.jsx
   const applyFilters = () => {
     let filtered = [...properties];
     // Search term filter - searches in title, description, and location
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const titleMatch = property.title?.toLowerCase().includes(searchLower);
-        const descMatch = property.description?.toLowerCase().includes(searchLower);
-        const locationMatch = getLocationString(property.location).toLowerCase().includes(searchLower);
-        const cityMatch = property.location?.city?.toLowerCase().includes(searchLower);
-        const addressMatch = property.location?.address?.toLowerCase().includes(searchLower);
-        return titleMatch || descMatch || locationMatch || cityMatch || addressMatch;
+        const descMatch = property.description
+          ?.toLowerCase()
+          .includes(searchLower);
+        const locationMatch = getLocationString(property.location)
+          .toLowerCase()
+          .includes(searchLower);
+        const cityMatch = property.location?.city
+          ?.toLowerCase()
+          .includes(searchLower);
+        const addressMatch = property.location?.address
+          ?.toLowerCase()
+          .includes(searchLower);
+        return (
+          titleMatch || descMatch || locationMatch || cityMatch || addressMatch
+        );
       });
     }
     // Location filter
     if (filters.location) {
-      filtered = filtered.filter(property => {
-        const locationString = getLocationString(property.location).toLowerCase();
-        const address = property.location?.address?.toLowerCase() || '';
-        return locationString.includes(filters.location.toLowerCase()) ||
-          address.includes(filters.location.toLowerCase());
+      filtered = filtered.filter((property) => {
+        const locationString = getLocationString(
+          property.location
+        ).toLowerCase();
+        const address = property.location?.address?.toLowerCase() || "";
+        return (
+          locationString.includes(filters.location.toLowerCase()) ||
+          address.includes(filters.location.toLowerCase())
+        );
       });
     }
     // City filter
     if (filters.city) {
-      filtered = filtered.filter(property =>
-        property.location?.city?.toLowerCase().includes(filters.city.toLowerCase())
+      filtered = filtered.filter((property) =>
+        property.location?.city
+          ?.toLowerCase()
+          .includes(filters.city.toLowerCase())
       );
     }
     // State filter
     if (filters.state) {
-      filtered = filtered.filter(property =>
-        property.location?.state?.toLowerCase().includes(filters.state.toLowerCase())
+      filtered = filtered.filter((property) =>
+        property.location?.state
+          ?.toLowerCase()
+          .includes(filters.state.toLowerCase())
       );
     }
     // Property type filter
-    if (filters.propertyType && filters.propertyType !== 'all') {
-      filtered = filtered.filter(property =>
-        property.propertyType?.toLowerCase() === filters.propertyType.toLowerCase()
+    if (filters.propertyType && filters.propertyType !== "all") {
+      filtered = filtered.filter(
+        (property) =>
+          property.propertyType?.toLowerCase() ===
+          filters.propertyType.toLowerCase()
       );
     }
     // Price range filter
     if (filters.priceRange) {
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const rent = parseFloat(property.rent) || 0;
         return rent >= filters.priceRange.min && rent <= filters.priceRange.max;
       });
     }
     // Bedrooms filter
-    if (filters.bedrooms && filters.bedrooms !== 'any') {
+    if (filters.bedrooms && filters.bedrooms !== "any") {
       const bedroomCount = parseInt(filters.bedrooms);
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const propBedrooms = parseInt(property.bedrooms) || 0;
-        return filters.bedrooms === '5' ? propBedrooms >= 5 : propBedrooms === bedroomCount;
+        return filters.bedrooms === "5"
+          ? propBedrooms >= 5
+          : propBedrooms === bedroomCount;
       });
     }
     // Bathrooms filter
-    if (filters.bathrooms && filters.bathrooms !== 'any') {
+    if (filters.bathrooms && filters.bathrooms !== "any") {
       const bathroomCount = parseInt(filters.bathrooms);
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const propBathrooms = parseInt(property.bathrooms) || 0;
-        return filters.bathrooms === '4' ? propBathrooms >= 4 : propBathrooms === bathroomCount;
+        return filters.bathrooms === "4"
+          ? propBathrooms >= 4
+          : propBathrooms === bathroomCount;
       });
     }
     // Area filter
     if (filters.minArea || filters.maxArea) {
-      filtered = filtered.filter(property => {
+      filtered = filtered.filter((property) => {
         const area = parseFloat(property.area) || 0;
         const minArea = parseFloat(filters.minArea) || 0;
         const maxArea = parseFloat(filters.maxArea) || Infinity;
@@ -393,9 +550,9 @@ const HomePage = () => {
     }
     // Amenities filter
     if (filters.amenities && filters.amenities.length > 0) {
-      filtered = filtered.filter(property =>
-        filters.amenities.every(amenity =>
-          (property.amenities || []).some(propAmenity =>
+      filtered = filtered.filter((property) =>
+        filters.amenities.every((amenity) =>
+          (property.amenities || []).some((propAmenity) =>
             propAmenity.toLowerCase().includes(amenity.toLowerCase())
           )
         )
@@ -404,24 +561,25 @@ const HomePage = () => {
     setFilteredProperties(filtered);
   };
   const getLocationString = (location) => {
-    if (typeof location === 'string') {
-      return location
+    if (typeof location === "string") {
+      return location;
     }
-    if (location && typeof location === 'object') {
-      if (location.address) return location.address
-      if (location.street) return location.street
-      if (location.city && location.state) return `${location.city}, ${location.state}`
-      return 'Location not specified'
+    if (location && typeof location === "object") {
+      if (location.address) return location.address;
+      if (location.street) return location.street;
+      if (location.city && location.state)
+        return `${location.city}, ${location.state}`;
+      return "Location not specified";
     }
-    return 'Location not specified'
-  }
+    return "Location not specified";
+  };
   const handleCloseModals = () => {
-    setShowAuthPrompt(false)
-    setShowLogin(false)
-    setShowRegister(false)
-    setShowPropertyDetails(false)
-    setSelectedProperty(null)
-  }
+    setShowAuthPrompt(false);
+    setShowLogin(false);
+    setShowRegister(false);
+    setShowPropertyDetails(false);
+    setSelectedProperty(null);
+  };
   if (loading) {
     return (
       <div className="homepage">
@@ -432,7 +590,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -448,80 +606,102 @@ const HomePage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="whole-con" >
+            <div className="whole-con">
               <Container>
                 <div className="container2">
                   {/* Row 1 */}
                   <div className=" row12">
                     <div className=" half2 heading2">
                       <h2>
-                        We make it easy for <span className="highlight2">tenants</span> and{" "}
+                        We make it easy for{" "}
+                        <span className="highlight2">tenants</span> and{" "}
                         <span className="highlight2">landlords</span>.
                       </h2>
                     </div>
                     <div className=" half2 paragraph2">
                       <p>
-                        Whether it’s selling your current home, getting financing, or buying
-                        a new home, we make it easy and efficient. The best part? You’ll
-                        save a bunch of money and time with our services.
+                        Whether it’s selling your current home, getting
+                        financing, or buying a new home, we make it easy and
+                        efficient. The best part? You’ll save a bunch of money
+                        and time with our services.
                       </p>
                     </div>
                   </div>
                   {/* Row 2 - Slider */}
-                  <div className="slider-wrapper" >
+                  <div className="slider-wrapper">
                     <Slider {...sliderSettings}>
                       <div className="slide">
                         <div className="card-g  bg-col1">
                           <div className="row-g">
                             <div className="col-left">
-                              <img src={icon1} style={{ width: '50px' }} />
+                              <img src={icon1} style={{ width: "50px" }} />
                             </div>
                             <div className="col-right">
-                              <h3>Verified Listings
-                              </h3>
-                              <p>You can communicate directly with landlords and we provide you with virtual tour before you buy/rent property.</p>
+                              <h3>Verified Listings</h3>
+                              <p>
+                                You can communicate directly with landlords and
+                                we provide you with virtual tour before you
+                                buy/rent property.
+                              </p>
                             </div>
-
                           </div>
                         </div>
                       </div>
-                      <div className="slide"> <div className="card-g bg-col2">
-                        <div className="row-g">
-                          <div className="col-left">
-                            <img src={icon2} style={{ width: '50px' }} />
+                      <div className="slide">
+                        {" "}
+                        <div className="card-g bg-col2">
+                          <div className="row-g">
+                            <div className="col-left">
+                              <img src={icon2} style={{ width: "50px" }} />
+                            </div>
+                            <div className="col-right">
+                              <h3>Find the best deal</h3>
+                              <p style={{ color: "#000" }}>
+                                Browse thousands of properties, save your
+                                favorites and set up search alerts so you don’t
+                                miss the best home deal!
+                              </p>
+                            </div>
                           </div>
-                          <div className="col-right">
-                            <h3>Find the best deal</h3>
-                            <p style={{ color: '#000' }}>Browse thousands of properties, save your favorites and set up search alerts so you don’t miss the best home deal!</p>
-                          </div>
-
                         </div>
-                      </div></div>
-                      <div className="slide"> <div className="card-g bg-col3">
-                        <div className="row-g">
-                          <div className="col-left">
-                            <img src={icon3} style={{ width: '50px' }} />
+                      </div>
+                      <div className="slide">
+                        {" "}
+                        <div className="card-g bg-col3">
+                          <div className="row-g">
+                            <div className="col-left">
+                              <img src={icon3} style={{ width: "50px" }} />
+                            </div>
+                            <div className="col-right">
+                              <h3>Get ready to apply</h3>
+                              <p>
+                                Find your dream house? You just need to do a
+                                little to no effort and you can start move in to
+                                your new dream home!
+                              </p>
+                            </div>
                           </div>
-                          <div className="col-right">
-                            <h3>Get ready to apply</h3>
-                            <p>Find your dream house? You just need to do a little to no effort and you can start move in to your new dream home!</p>
-                          </div>
-
                         </div>
-                      </div></div>
+                      </div>
                     </Slider>
                   </div>
                   {/* Row 3 - Counters */}
                   <div className="counter-section">
                     <Counter target={7.4} label="Property Return Rate" />
-                    <Counter target={3798} label="Property in Sell & Rent" style={{
-                      borderLeft: "2px solid #ccc",
-                      borderRight: "2px solid #ccc"
-                    }} />
-                    <Counter target={2095} label="Daily Completed Transactions" />
+                    <Counter
+                      target={3798}
+                      label="Property in Sell & Rent"
+                      style={{
+                        borderLeft: "2px solid #ccc",
+                        borderRight: "2px solid #ccc",
+                      }}
+                    />
+                    <Counter
+                      target={2095}
+                      label="Daily Completed Transactions"
+                    />
                   </div>
                 </div>
-
               </Container>
             </div>
           </motion.section>
@@ -541,14 +721,16 @@ const HomePage = () => {
                 margin: "0 auto",
               }}
             >
-              <p className="head-size" style={{ fontSize: "50px" }}>Residential</p>
+              <p className="head-size" style={{ fontSize: "50px" }}>
+                Residential
+              </p>
               <p
                 className="para-pad"
                 style={{ paddingBottom: "50px", fontSize: "16px" }}
               >
-                Find your dream home with Tru Owners. Explore a wide range of verified
-                residential listings including apartments, villas, plots, and independent
-                houses.
+                Find your dream home with Tru Owners. Explore a wide range of
+                verified residential listings including apartments, villas,
+                plots, and independent houses.
               </p>
             </div>
 
@@ -561,7 +743,9 @@ const HomePage = () => {
                       <div
                         key={index}
                         className={`img-box ${item.size}`}
-                        style={{ backgroundImage: `url(${item.backgroundImage})` }}
+                        style={{
+                          backgroundImage: `url(${item.backgroundImage})`,
+                        }}
                         onClick={() =>
                           navigate(
                             `/properties?propertyType=${item.propertyType.toLowerCase()}&listingType=${activeTab.toLowerCase()}`
@@ -570,7 +754,13 @@ const HomePage = () => {
                       >
                         <div className="overlay-1">
                           <h4>{item.propertyType}</h4>
-                          <p style={{ fontWeight: 600, fontStyle: 'italic', marginTop: '5px' }}>
+                          <p
+                            style={{
+                              fontWeight: 600,
+                              fontStyle: "italic",
+                              marginTop: "5px",
+                            }}
+                          >
                             {item.listingType}
                           </p>
                         </div>
@@ -595,7 +785,13 @@ const HomePage = () => {
                 >
                   <div className="overlay-1">
                     <h4>{propertyData.rightCol.independent.propertyType}</h4>
-                    <p style={{ fontWeight: 600, fontStyle: 'italic', marginTop: '5px' }}>
+                    <p
+                      style={{
+                        fontWeight: 600,
+                        fontStyle: "italic",
+                        marginTop: "5px",
+                      }}
+                    >
                       {propertyData.rightCol.independent.listingType}
                     </p>
                   </div>
@@ -610,19 +806,21 @@ const HomePage = () => {
               </div>
             </div>
           </motion.section>
-
         </div>
 
         {/* Properties Grid */}
         <motion.div
           className="properties-section"
-          style={{ background: 'linear-gradient(180deg, #E1EDFF 0%, rgba(255, 255, 255, 0.14) 100%)' }}
+          style={{
+            background:
+              "linear-gradient(180deg, #E1EDFF 0%, rgba(255, 255, 255, 0.14) 100%)",
+          }}
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <div className="properties-header" >
+          <div className="properties-header">
             {/* Commented section kept as is */}
             <h2>Based on your location</h2>
             <p>Some of our picked properties near you location.</p>
@@ -632,18 +830,20 @@ const HomePage = () => {
             <div className="empty-properties d-flex flex-column align-items-center text-center">
               <div className="empty-icon">🏠</div>
               <h3>No properties match your criteria</h3>
-              <p>Try adjusting your filters or search terms to see more results.</p>
+              <p>
+                Try adjusting your filters or search terms to see more results.
+              </p>
               <button
                 className="btn btn-primary"
                 onClick={() => {
                   setFilters({
-                    location: '',
-                    propertyType: 'all',
+                    location: "",
+                    propertyType: "all",
                     priceRange: { min: 0, max: 10000 },
-                    bedrooms: 'any',
-                    amenities: []
-                  })
-                  setSearchTerm('')
+                    bedrooms: "any",
+                    amenities: [],
+                  });
+                  setSearchTerm("");
                 }}
               >
                 Clear All Filters
@@ -656,16 +856,26 @@ const HomePage = () => {
               {filteredProperties.map((property, index) => (
                 <motion.div
                   key={property.id}
-                  initial={{ opacity: 0, y: 20, display: "flex", justifyContent: "center", alignItems: "center" }}
+                  initial={{
+                    opacity: 0,
+                    y: 20,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <PropertyCard
                     property={property}
-                    // isInWishlist={wishlist.includes(property.id)}
-                    onWishlistToggle={() => handleWishlistToggle(property.id)}
-                    onClick={() => handlePropertyClick(property)}
+                    isInWishlist={wishlist.includes(
+                      property.id || property._id
+                    )}
+                    onWishlistToggle={() =>
+                      handleWishlistToggle(property.id || property._id)
+                    }
+                    onViewDetails={() => handlePropertyClick(property)}
                     onLoginRequired={handleLoginRequired}
                     isAuthenticated={isAuthenticated}
                     postType={property?.listingType ?? "Rent"}
@@ -694,7 +904,6 @@ const HomePage = () => {
               SHOW MORE
             </Button>
           </div>
-
         </motion.div>
         <motion.section
           className="about-cta"
@@ -706,36 +915,94 @@ const HomePage = () => {
           <div className="three-column-layout">
             {/* Column 3 (Form) */}
             <div className="column form-column">
-              <form>
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <img src={truOwnersLogo} alt="TruOwners Logo" style={{ width: '200px' }} />
-                  <label className='title-color'>VIEW LISTINGS</label>
+              <form onSubmit={handleInquirySubmit}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <img
+                    src={truOwnersLogo}
+                    alt="TruOwners Logo"
+                    style={{ width: "200px" }}
+                  />
+                  <label className="title-color">VIEW LISTINGS</label>
                 </div>
 
-                <input type="text" placeholder="NAME" />
-                <input type="email" placeholder="EMAIL ADDRESS" />
-                <input type="number" placeholder="PHONE NUMBER" />
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="NAME"
+                  value={inquiryForm.name}
+                  onChange={handleInquiryChange}
+                  required
+                />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="EMAIL ADDRESS"
+                  value={inquiryForm.email}
+                  onChange={handleInquiryChange}
+                  required
+                />
+                <input
+                  type="number"
+                  name="phone"
+                  placeholder="PHONE NUMBER"
+                  value={inquiryForm.phone}
+                  onChange={handleInquiryChange}
+                  required
+                />
 
-                <textarea placeholder="HELLO, I AM INTERESTED IN 2 BHK 2ND FLOOR, NORTH FACING MAIN DOOR, 32000 RENT." rows="4"></textarea>
+                <textarea
+                  name="message"
+                  placeholder="HELLO, I AM INTERESTED IN 2 BHK 2ND FLOOR, NORTH FACING MAIN DOOR, 32000 RENT."
+                  rows="4"
+                  value={inquiryForm.message}
+                  onChange={handleInquiryChange}
+                  required
+                ></textarea>
 
-                <select>
+                <select
+                  name="interestedIn"
+                  value={inquiryForm.interestedIn}
+                  onChange={handleInquiryChange}
+                  required
+                >
                   <option value="">INTERESTED IN</option>
                   <option value="SELL">SELL</option>
                   <option value="RENT">RENT</option>
                   <option value="LEASE">LEASE</option>
+                  <option value="COMMERCIAL">COMMERCIAL</option>
                 </select>
 
-                <label style={{ color: '#000' }}>
-                  <input type="checkbox" /> By submitting this form I agree to Terms of Use
+                <label style={{ color: "#000" }}>
+                  <input
+                    type="checkbox"
+                    name="agreed"
+                    checked={inquiryForm.agreed}
+                    onChange={handleInquiryChange}
+                  />{" "}
+                  By submitting this form I agree to Terms of Use
                 </label>
 
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', columnGap: '20px' }}>
-                  <button type="submit" className="submit-btn mar-btn" style={{ width: "50%" }}>SEND MESSAGE</button>
-                  <button type="submit" className="submit-btn mar-btn" style={{ width: "50%" }}>CALL</button>
-                </div>
-
-                <div className='whatsapp-btn'>
-                  <button type="submit" className="submit-btn mar-btn1">WHATSAPP</button>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    rowGap: "20px",
+                    marginTop: "20px",
+                  }}
+                >
+                  <button
+                    type="submit"
+                    className="submit-btn mar-btn"
+                    style={{ width: "100%" }}
+                  >
+                    SEND MESSAGE
+                  </button>
                 </div>
               </form>
             </div>
@@ -743,49 +1010,49 @@ const HomePage = () => {
             {/* Column 1 */}
             <div className="column center1">
               <div className="section12">
-                <h3 style={{ color: '#fff' }}>Putting a plan to action,
-                  to assure your satisfaction!
+                <h3 style={{ color: "#fff" }}>
+                  Putting a plan to action, to assure your satisfaction!
                 </h3>
-                <p style={{ color: '#fff' }}>
-                  Every property listed on our platform is thoroughly verified for authenticity, location accuracy,
-                  and pricing—so you can rent or buy with complete confidence.
+                <p style={{ color: "#fff" }}>
+                  Every property listed on our platform is thoroughly verified
+                  for authenticity, location accuracy, and pricing—so you can
+                  rent or buy with complete confidence.
                 </p>
               </div>
             </div>
           </div>
-
         </motion.section>
 
         <motion.div
           style={{
-            width: '100%',
-            background: 'linear-gradient(180deg, #E1EDFF 0%, rgba(255, 255, 255, 0.14) 100%)'
+            width: "100%",
+            background:
+              "linear-gradient(180deg, #E1EDFF 0%, rgba(255, 255, 255, 0.14) 100%)",
           }}
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-
           <div className="testimonial-slider-container">
             <h2
               className="slider-title"
               style={{
-                textAlign: 'center',
-                marginBottom: '10px',
-                fontSize: '40px',
-                color: '#000'
+                textAlign: "center",
+                marginBottom: "10px",
+                fontSize: "40px",
+                color: "#000",
               }}
             >
               What Our Happy Customers Say
             </h2>
             <p
               style={{
-                textAlign: 'center',
-                marginBottom: '40px',
-                fontSize: '16px',
-                color: '#000',
-                opacity: '60%'
+                textAlign: "center",
+                marginBottom: "40px",
+                fontSize: "16px",
+                color: "#000",
+                opacity: "60%",
               }}
             >
               See what our property managers, landlords, and tenants have to say
@@ -797,44 +1064,45 @@ const HomePage = () => {
               slidesPerView={1}
               autoplay={{
                 delay: 3000,
-                disableOnInteraction: false
+                disableOnInteraction: false,
               }}
               loop={true}
               navigation={true} // ✅ Enables arrows
               breakpoints={{
                 640: { slidesPerView: 1 },
-                1024: { slidesPerView: 1 }
+                1024: { slidesPerView: 1 },
               }}
-              style={{ padding: '20px' }}
+              style={{ padding: "20px" }}
             >
               {testimonials.map((testimonial, index) => (
                 <SwiperSlide
                   key={index}
                   style={{
-                    height: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    height: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <div className="div-test"
+                  <div
+                    className="div-test"
                     style={{
-                      borderRadius: '10px',
-                      padding: '30px',
-                      height: '250px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center'
+                      borderRadius: "10px",
+                      padding: "30px",
+                      height: "250px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textAlign: "center",
                     }}
                   >
                     <p
                       style={{
-                        fontSize: '16px',
-                        lineHeight: '1.6',
-                        marginBottom: '20px',
-                        flexGrow: 1
+                        fontSize: "16px",
+                        lineHeight: "1.6",
+                        marginBottom: "20px",
+                        flexGrow: 1,
                       }}
                     >
                       "{testimonial.text}"
@@ -844,29 +1112,29 @@ const HomePage = () => {
                       src={testimonial.image}
                       alt={testimonial.name}
                       style={{
-                        width: '50px',
-                        height: '50px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        marginBottom: '10px'
+                        width: "50px",
+                        height: "50px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        marginBottom: "10px",
                       }}
                     />
 
                     <h4
                       style={{
-                        margin: '0',
-                        fontSize: '1.1rem',
-                        color: '#000'
+                        margin: "0",
+                        fontSize: "1.1rem",
+                        color: "#000",
                       }}
                     >
                       {testimonial.name}
                     </h4>
                     <p
                       style={{
-                        margin: '5px 0 0',
-                        fontSize: '0.9rem',
-                        color: '#000',
-                        opacity: '60%'
+                        margin: "5px 0 0",
+                        fontSize: "0.9rem",
+                        color: "#000",
+                        opacity: "60%",
                       }}
                     >
                       {testimonial.role}
@@ -879,11 +1147,8 @@ const HomePage = () => {
         </motion.div>
       </div>
 
-
       {/* Modals */}
-      {showAuthPrompt && (
-        <AuthPromptModal onClose={handleCloseModals} />
-      )}
+      {showAuthPrompt && <AuthPromptModal onClose={handleCloseModals} />}
 
       {showLogin && (
         <Login
@@ -909,23 +1174,67 @@ const HomePage = () => {
           onAuthPrompt={() => setShowAuthPrompt(true)}
         />
       )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
-  )
-}
-export default HomePage
+  );
+};
+export default HomePage;
 const propertyData = {
   leftCol: [
     [
-      { propertyType: "Villa", listingType: "sell", backgroundImage: villaImg, size: "w75" },
-      { propertyType: "Apartment", listingType: "sell", backgroundImage: aprtmentImg, size: "w25" },
+      {
+        propertyType: "Villa",
+        listingType: "sell",
+        backgroundImage: villaImg,
+        size: "w75",
+      },
+      {
+        propertyType: "Apartment",
+        listingType: "sell",
+        backgroundImage: aprtmentImg,
+        size: "w25",
+      },
     ],
     [
-      { propertyType: "Studio", listingType: "rent", backgroundImage: studioImg, size: "w25" },
-      { propertyType: "Single Family Room", listingType: "rent", backgroundImage: singleImg, size: "w75" },
+      {
+        propertyType: "Studio",
+        listingType: "rent",
+        backgroundImage: studioImg,
+        size: "w25",
+      },
+      {
+        propertyType: "Single Family Room",
+        listingType: "rent",
+        backgroundImage: singleImg,
+        size: "w75",
+      },
     ],
     [
-      { propertyType: "Office", listingType: "commercial", backgroundImage: officeImg, size: "w75" },
-      { propertyType: "Shop", listingType: "commercial", backgroundImage: shopImg, size: "w25" },
+      {
+        propertyType: "Office",
+        listingType: "commercial",
+        backgroundImage: officeImg,
+        size: "w75",
+      },
+      {
+        propertyType: "Shop",
+        listingType: "commercial",
+        backgroundImage: shopImg,
+        size: "w25",
+      },
     ],
   ],
   rightCol: {
@@ -941,5 +1250,3 @@ const propertyData = {
     },
   },
 };
-
-

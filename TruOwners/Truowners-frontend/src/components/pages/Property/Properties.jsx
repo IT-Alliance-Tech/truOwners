@@ -56,12 +56,15 @@ const PropertiesPage = () => {
 
   // Filter state - initialized from URL params to avoid initial unfiltered fetch
   const [filters, setFilters] = useState(() => {
-    const status = searchParams.get("status") || searchParams.get("listingType") || "rent";
+    const status =
+      searchParams.get("status") || searchParams.get("listingType") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     const isRentOrComm = status === "rent" || status === "commercial";
-    const initialRentMax = rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
-    const initialBudgetMax = (!isRentOrComm && rawMaxBudget) ? rawMaxBudget : 30000000;
+    const initialRentMax =
+      rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
+    const initialBudgetMax =
+      !isRentOrComm && rawMaxBudget ? rawMaxBudget : 30000000;
 
     return {
       propertyType: searchParams.get("propertyType") || "",
@@ -75,10 +78,8 @@ const PropertiesPage = () => {
             .map((a) => a.trim())
         : [],
       title: searchParams.get("title") || "",
-      rentRange: [
-        parseInt(searchParams.get("minRent")) || 0,
-        initialRentMax,
-      ],
+      address: searchParams.get("address") || "",
+      rentRange: [parseInt(searchParams.get("minRent")) || 0, initialRentMax],
       budgetRange: [
         parseInt(searchParams.get("minBudget")) || 0,
         initialBudgetMax,
@@ -99,12 +100,15 @@ const PropertiesPage = () => {
 
   // Initialize filters from URL parameters ONLY when searchParams change
   useEffect(() => {
-    const status = searchParams.get("status") || searchParams.get("listingType") || "rent";
+    const status =
+      searchParams.get("status") || searchParams.get("listingType") || "rent";
     const rawMaxBudget = parseInt(searchParams.get("maxBudget"));
     const rawMaxRent = parseInt(searchParams.get("maxRent"));
     const isRentOrComm = status === "rent" || status === "commercial";
-    const initialRentMax = rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
-    const initialBudgetMax = (!isRentOrComm && rawMaxBudget) ? rawMaxBudget : 30000000;
+    const initialRentMax =
+      rawMaxRent || (isRentOrComm && rawMaxBudget ? rawMaxBudget : 500000);
+    const initialBudgetMax =
+      !isRentOrComm && rawMaxBudget ? rawMaxBudget : 30000000;
 
     const updatedFilters = {
       propertyType: searchParams.get("propertyType") || "",
@@ -118,26 +122,24 @@ const PropertiesPage = () => {
             .map((a) => a.trim())
         : [],
       title: searchParams.get("title") || "",
-      rentRange: [
-        parseInt(searchParams.get("minRent")) || 0,
-        initialRentMax,
-      ],
+      rentRange: [parseInt(searchParams.get("minRent")) || 0, initialRentMax],
       budgetRange: [
         parseInt(searchParams.get("minBudget")) || 0,
         initialBudgetMax,
       ],
       status: status,
+      address: searchParams.get("address") || "",
     };
 
     setFilters(updatedFilters);
     setPage(parseInt(searchParams.get("page")) || 1);
 
     // Auto-open filter drawer only once on initial search
-    const hasFilters = Array.from(searchParams.keys()).some(key => 
+    const hasFilters = Array.from(searchParams.keys()).some((key) =>
       ["status", "city", "propertyType", "bedrooms", "search"].includes(key)
     );
     const cameFromSearch = searchParams.get("fromSearch") === "true";
-    
+
     if (!hasAutoOpened.current && (hasFilters || cameFromSearch)) {
       setMobileFilterOpen(true);
       hasAutoOpened.current = true;
@@ -179,22 +181,31 @@ const PropertiesPage = () => {
       if (filters.amenities && filters.amenities.length > 0)
         params.append("amenities", filters.amenities.join(","));
       if (filters.title) params.append("title", filters.title);
+      if (filters.address) params.append("address", filters.address);
 
       if (filters.status && filters.status !== "All")
         params.append("listingType", filters.status);
 
       if (filters.status === "rent" || filters.status === "commercial") {
-        if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
-        if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
+        if (filters.rentRange[0] > 0)
+          params.append("minRent", filters.rentRange[0]);
+        if (filters.rentRange[1] < 500000)
+          params.append("maxRent", filters.rentRange[1]);
       } else if (filters.status === "sell" || filters.status === "lease") {
-        if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
-        if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+        if (filters.budgetRange[0] > 0)
+          params.append("minBudget", filters.budgetRange[0]);
+        if (filters.budgetRange[1] < 30000000)
+          params.append("maxBudget", filters.budgetRange[1]);
       } else {
         // All status - send both
-        if (filters.rentRange[0] > 0) params.append("minRent", filters.rentRange[0]);
-        if (filters.rentRange[1] < 500000) params.append("maxRent", filters.rentRange[1]);
-        if (filters.budgetRange[0] > 0) params.append("minBudget", filters.budgetRange[0]);
-        if (filters.budgetRange[1] < 30000000) params.append("maxBudget", filters.budgetRange[1]);
+        if (filters.rentRange[0] > 0)
+          params.append("minRent", filters.rentRange[0]);
+        if (filters.rentRange[1] < 500000)
+          params.append("maxRent", filters.rentRange[1]);
+        if (filters.budgetRange[0] > 0)
+          params.append("minBudget", filters.budgetRange[0]);
+        if (filters.budgetRange[1] < 30000000)
+          params.append("maxBudget", filters.budgetRange[1]);
       }
 
       // Add pagination
@@ -342,6 +353,7 @@ const PropertiesPage = () => {
       budgetRange: updatedFilters.budgetRange || [0, 30000000],
       amenities: updatedFilters.amenities || [],
       title: updatedFilters.title || "",
+      address: updatedFilters.location || "",
       status: updatedFilters.status || "All",
     };
 
@@ -369,6 +381,7 @@ const PropertiesPage = () => {
     if (newFilters.amenities && newFilters.amenities.length > 0)
       newSearchParams.set("amenities", newFilters.amenities.join(","));
     if (newFilters.title) newSearchParams.set("title", newFilters.title);
+    if (newFilters.address) newSearchParams.set("address", newFilters.address);
     if (newFilters.status && newFilters.status !== "All")
       newSearchParams.set("status", newFilters.status);
 
@@ -388,17 +401,32 @@ const PropertiesPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const currentFilters = React.useMemo(() => ({
-    propertyType: filters.propertyType,
-    city: filters.city,
-    bedrooms: filters.bedrooms,
-    search: filters.searchTerm,
-    amenities: filters.amenities,
-    title: filters.title,
-    budgetRange: filters.budgetRange,
-    rentRange: filters.rentRange,
-    status: filters.status,
-  }), [filters.propertyType, filters.city, filters.bedrooms, filters.searchTerm, filters.amenities, filters.title, filters.budgetRange, filters.rentRange, filters.status]);
+  const currentFilters = React.useMemo(
+    () => ({
+      propertyType: filters.propertyType,
+      city: filters.city,
+      bedrooms: filters.bedrooms,
+      search: filters.searchTerm,
+      amenities: filters.amenities,
+      title: filters.title,
+      address: filters.address,
+      budgetRange: filters.budgetRange,
+      rentRange: filters.rentRange,
+      status: filters.status,
+    }),
+    [
+      filters.propertyType,
+      filters.city,
+      filters.bedrooms,
+      filters.searchTerm,
+      filters.amenities,
+      filters.title,
+      filters.address,
+      filters.budgetRange,
+      filters.rentRange,
+      filters.status,
+    ]
+  );
 
   // Get active filters for display
   const getActiveFilters = () => {
@@ -431,6 +459,8 @@ const PropertiesPage = () => {
       });
     if (filters.title)
       active.push({ key: "title", label: "Title", value: filters.title });
+    if (filters.address)
+      active.push({ key: "address", label: "Address", value: filters.address });
 
     if (filters.rentRange[0] > 0 || filters.rentRange[1] < 500000) {
       active.push({
@@ -470,10 +500,57 @@ const PropertiesPage = () => {
       search: "",
       amenities: [],
       title: "",
+      address: "",
       budgetRange: [0, 30000000],
       rentRange: [0, 500000],
       status: "All",
     });
+  };
+
+  const handleRemoveFilter = (key) => {
+    const updatedFilters = { ...filters };
+
+    switch (key) {
+      case "propertyType":
+      case "city":
+      case "bedrooms":
+      case "title":
+      case "address":
+        updatedFilters[key] = "";
+        break;
+      case "search":
+        updatedFilters.searchTerm = "";
+        break;
+      case "amenities":
+        updatedFilters.amenities = [];
+        break;
+      case "rent":
+        updatedFilters.rentRange = [0, 500000];
+        break;
+      case "budget":
+        updatedFilters.budgetRange = [0, 30000000];
+        break;
+      case "status":
+        updatedFilters.status = "All";
+        break;
+      default:
+        break;
+    }
+
+    // Map internal key 'searchTerm' back to 'search' for handleFilterSearch if needed
+    // But handleFilterSearch expects an object with keys matching what it decomposes
+    // Let's create an object compatible with handleFilterSearch
+    const searchReadyFilters = {
+      ...updatedFilters,
+      search: updatedFilters.searchTerm, // Ensure search is passed as key 'search'
+    };
+
+    // Also need to handle URL params clearing for that key, handleFilterSearch does this.
+    // We just need to call handleFilterSearch with the updated filter set.
+    // The first arg 'queryString' is mostly logging or unused in the implementation shown,
+    // passing empty string is fine.
+
+    handleFilterSearch("", searchReadyFilters);
   };
 
   return (
@@ -532,6 +609,7 @@ const PropertiesPage = () => {
                   variant="outlined"
                   color="primary"
                   size="small"
+                  onDelete={() => handleRemoveFilter(filter.key)}
                 />
               ))}
               <Button

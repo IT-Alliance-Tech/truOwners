@@ -299,11 +299,15 @@ export default function FilterSidebar({
     }
     return base;
   });
-  // Custom range slider state 
+  // Custom range slider state
   const [customRange, setCustomRange] = useState(() => {
-    const tabIndex = getStatusTabIndex(currentFilters.status || initialFilters.status || "rent");
-    if (tabIndex === 0 || tabIndex === 3) return currentFilters.rentRange || [5000, 500000];
-    if (tabIndex === 1 || tabIndex === 2) return currentFilters.budgetRange || [1000000, 30000000];
+    const tabIndex = getStatusTabIndex(
+      currentFilters.status || initialFilters.status || "rent"
+    );
+    if (tabIndex === 0 || tabIndex === 3)
+      return currentFilters.rentRange || [5000, 500000];
+    if (tabIndex === 1 || tabIndex === 2)
+      return currentFilters.budgetRange || [1000000, 30000000];
     return [5000, 30000000];
   });
 
@@ -312,11 +316,11 @@ export default function FilterSidebar({
   useEffect(() => {
     const statusMap = ["rent", "sell", "lease", "commercial"];
     const newStatus = statusMap[statusTab];
-    
+
     // On initial mount or when syncing from external prop, don't reset ranges if we already have them
     if (skipInitialRangeReset.current) {
       skipInitialRangeReset.current = false;
-      setFilters(prev => {
+      setFilters((prev) => {
         const updated = { ...prev, status: newStatus };
         // Sync strings if we have ranges
         if (currentFilters.rentRange) {
@@ -333,13 +337,14 @@ export default function FilterSidebar({
       if (statusTab === 0 || statusTab === 3) {
         if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
       } else if (statusTab === 1 || statusTab === 2) {
-        if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
+        if (currentFilters.budgetRange)
+          setCustomRange(currentFilters.budgetRange);
       }
       return;
     }
 
     if (statusTab === 0) {
-      setFilters(prev => ({ ...prev, status: newStatus }));
+      setFilters((prev) => ({ ...prev, status: newStatus }));
       return;
     }
     const [min, max] = getSuggestedRange(statusTab);
@@ -389,7 +394,10 @@ export default function FilterSidebar({
       });
 
       if (hasChanges) {
-        console.log("FilterSidebar: currentFilters changed, syncing state", currentFilters);
+        console.log(
+          "FilterSidebar: currentFilters changed, syncing state",
+          currentFilters
+        );
         setFilters((prev) => ({
           ...prev,
           ...currentFilters,
@@ -412,11 +420,13 @@ export default function FilterSidebar({
         if (currentFilters.status) {
           const newTabIndex = getStatusTabIndex(currentFilters.status);
           setStatusTab(newTabIndex);
-          
+
           if (newTabIndex === 0 || newTabIndex === 3) {
-             if (currentFilters.rentRange) setCustomRange(currentFilters.rentRange);
+            if (currentFilters.rentRange)
+              setCustomRange(currentFilters.rentRange);
           } else if (newTabIndex === 1 || newTabIndex === 2) {
-             if (currentFilters.budgetRange) setCustomRange(currentFilters.budgetRange);
+            if (currentFilters.budgetRange)
+              setCustomRange(currentFilters.budgetRange);
           }
         }
       }
@@ -493,6 +503,7 @@ export default function FilterSidebar({
     if (filters.bedrooms) params.append("bedrooms", filters.bedrooms);
     if (filters.search) params.append("search", filters.search);
     if (filters.title) params.append("title", filters.title);
+    if (filters.location) params.append("address", filters.location);
     if (filters.amenities && filters.amenities.length > 0)
       params.append("amenities", filters.amenities.join(","));
 
@@ -513,7 +524,7 @@ export default function FilterSidebar({
       ...filters,
       search: filters.search, // Explicitly pass search
       // Ensure the correct status is sent even if the filters object was behind
-      status: ["rent", "sell", "lease", "commercial"][statusTab]
+      status: ["rent", "sell", "lease", "commercial"][statusTab],
     });
   };
 

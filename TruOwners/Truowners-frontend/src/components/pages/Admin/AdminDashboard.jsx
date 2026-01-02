@@ -1,11 +1,23 @@
 // AdminDashboard.jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Box, Typography, AppBar, Toolbar, IconButton, Menu, MenuItem,
-  Tabs, Tab, Drawer, BottomNavigation, BottomNavigationAction, Paper,
-  Divider, useTheme
-} from '@mui/material';
-import useMediaQuery from '@mui/material/useMediaQuery';
+  Box,
+  Typography,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Menu,
+  MenuItem,
+  Tabs,
+  Tab,
+  Drawer,
+  BottomNavigation,
+  BottomNavigationAction,
+  Paper,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
@@ -14,28 +26,31 @@ import {
   CardMembership as SubscriptionIcon,
   Logout as LogoutIcon,
   MoreVert as MoreVertIcon,
-  Menu as MenuIcon
-} from '@mui/icons-material';
+  Menu as MenuIcon,
+} from "@mui/icons-material";
 
-import { useAdminAuth } from '../../../context/AdminAuthContext';
-import AnalyticsOverview from './AnalyticsOverview';
-import UsersTab from './UsersTab';
-import PropertiesTab from './PropertiesTab';
-import BookingsTab from './BookingsTab';
-import SubscriptionTab from './SubscriptionTab';
+import { useAdminAuth } from "../../../context/AdminAuthContext";
+import AnalyticsOverview from "./AnalyticsOverview";
+import UsersTab from "./UsersTab";
+import PropertiesTab from "./PropertiesTab";
+import BookingsTab from "./BookingsTab";
+import SubscriptionTab from "./SubscriptionTab";
+import InquiriesTab from "./InquiriesTab";
+import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 
 const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon /> },
-  { label: 'Users', icon: <PeopleIcon /> },
-  { label: 'Properties', icon: <HomeIcon /> },
-  { label: 'Bookings', icon: <BookingsIcon /> },
-  { label: 'Subscription', icon: <SubscriptionIcon /> }
+  { label: "Dashboard", icon: <DashboardIcon /> },
+  { label: "Users", icon: <PeopleIcon /> },
+  { label: "Properties", icon: <HomeIcon /> },
+  { label: "Bookings", icon: <BookingsIcon /> },
+  { label: "Subscription", icon: <SubscriptionIcon /> },
+  { label: "Inquiries", icon: <QuestionAnswerIcon /> },
 ];
 
 export default function AdminDashboard() {
   const { logout } = useAdminAuth();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTabletUp = !isMobile;
 
   const [tab, setTab] = useState(0);
@@ -44,23 +59,30 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
     <Box display="flex" flexDirection="column" height="100vh" width="100%">
       {/* AppBar */}
-      <AppBar position="fixed" sx={{ bgcolor: '#1976d2' }}>
+      <AppBar position="fixed" sx={{ bgcolor: "#1976d2" }}>
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
           {isMobile && (
-            <IconButton edge="start" color="inherit" onClick={() => setDrawerOpen(true)}>
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={() => setDrawerOpen(true)}
+            >
               <MenuIcon />
             </IconButton>
           )}
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Admin Dashboard
           </Typography>
-          <IconButton color="inherit" onClick={e => setMenuEl(e.currentTarget)}>
+          <IconButton
+            color="inherit"
+            onClick={(e) => setMenuEl(e.currentTarget)}
+          >
             <MoreVertIcon />
           </IconButton>
           <Menu
@@ -85,9 +107,12 @@ export default function AdminDashboard() {
           {navItems.map((item, idx) => (
             <MenuItem
               key={item.label}
-              onClick={() => { setTab(idx); setDrawerOpen(false); }}
+              onClick={() => {
+                setTab(idx);
+                setDrawerOpen(false);
+              }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
                 {item.icon}
                 <Typography sx={{ ml: 1 }}>{item.label}</Typography>
               </Box>
@@ -112,36 +137,46 @@ export default function AdminDashboard() {
           indicatorColor="primary"
           textColor="primary"
         >
-          {navItems.map(item => (
+          {navItems.map((item) => (
             <Tab
               key={item.label}
               icon={item.icon}
               iconPosition="start"
               label={item.label}
-              sx={{ textTransform: 'none', flex: 1 }}
+              sx={{ textTransform: "none", flex: 1 }}
             />
           ))}
         </Tabs>
       )}
 
       {/* Main content */}
-      <Box component="main" flex={1} overflow="auto" px={{ xs: 1, md: 3 }} py={3}>
+      <Box
+        component="main"
+        flex={1}
+        overflow="auto"
+        px={{ xs: 1, md: 3 }}
+        py={3}
+      >
         {tab === 0 && <AnalyticsOverview fallback />}
         {tab === 1 && <UsersTab fallback />}
         {tab === 2 && <PropertiesTab fallback />}
         {tab === 3 && <BookingsTab fallback />}
         {tab === 4 && <SubscriptionTab />}
+        {tab === 5 && <InquiriesTab />}
       </Box>
 
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <Paper elevation={3} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}>
+        <Paper
+          elevation={3}
+          sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
+        >
           <BottomNavigation
             showLabels
             value={tab}
             onChange={(_, newVal) => setTab(newVal)}
           >
-            {navItems.map(item => (
+            {navItems.map((item) => (
               <BottomNavigationAction
                 key={item.label}
                 label={item.label}
