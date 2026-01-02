@@ -208,11 +208,7 @@ const createPlaceholderOwner = async () => {
 const createPropertyWithOwner = async (req, res) => {
   try {
     const { owner: ownerData = null, property: propertyData } = req.body;
-    if (
-      !ownerData ||
-      !isFilled(ownerData.name) ||
-      !isFilled(ownerData.phone)
-    ) {
+    if (!ownerData || !isFilled(ownerData.name) || !isFilled(ownerData.phone)) {
       return res.status(400).json({
         statusCode: 400,
         success: false,
@@ -1128,9 +1124,13 @@ const getUsersWithSubscriptions = async (req, res) => {
     });
   } catch (error) {
     console.error("Get users with subscriptions error:", error);
-    res
-      .status(500)
-      .json({ success: false, error: { message: "Internal server error" } });
+    res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
+    });
   }
 };
 
@@ -1176,9 +1176,13 @@ const getAllPayments = async (req, res) => {
     });
   } catch (error) {
     console.error("Get all payments error:", error);
-    res
-      .status(500)
-      .json({ success: false, error: { message: "Internal server error" } });
+    res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
+    });
   }
 };
 // get commit
@@ -1236,9 +1240,13 @@ const getUserHistory = async (req, res) => {
     });
   } catch (error) {
     console.error("Get user history error:", error);
-    res
-      .status(500)
-      .json({ success: false, error: { message: "Internal server error" } });
+    res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
+    });
   }
 };
 

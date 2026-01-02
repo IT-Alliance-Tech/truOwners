@@ -20,9 +20,13 @@ exports.createInquiry = async (req, res) => {
       data: inquiry,
     });
   } catch (error) {
+    console.error("Inquiry creation error:", error);
     res.status(400).json({
       success: false,
-      error: error.message,
+      error: {
+        message: "Failed to create inquiry",
+        details: error.message,
+      },
     });
   }
 };
@@ -40,9 +44,13 @@ exports.getAllInquiries = async (req, res) => {
       data: inquiries,
     });
   } catch (error) {
+    console.error("Get all inquiries error:", error);
     res.status(500).json({
       success: false,
-      error: "Server Error",
+      error: {
+        message: "Server Error",
+        details: error.message,
+      },
     });
   }
 };
@@ -63,7 +71,10 @@ exports.updateInquiryStatus = async (req, res) => {
     if (!inquiry) {
       return res.status(404).json({
         success: false,
-        error: "Inquiry not found",
+        error: {
+          message: "Inquiry not found",
+          details: `No inquiry record exists for ID: ${req.params.id}`,
+        },
       });
     }
 
@@ -72,9 +83,19 @@ exports.updateInquiryStatus = async (req, res) => {
       data: inquiry,
     });
   } catch (error) {
+    console.error("Update inquiry status error:", error);
     res.status(400).json({
       success: false,
-      error: error.message,
+      error: {
+        message: "Failed to update inquiry status",
+        details: error.message,
+      },
     });
   }
+};
+
+module.exports = {
+  createInquiry: exports.createInquiry,
+  getAllInquiries: exports.getAllInquiries,
+  updateInquiryStatus: exports.updateInquiryStatus,
 };

@@ -1,7 +1,7 @@
-const PropertyView = require('../models/PropertyView');
-const UserSubscription = require('../models/UserSubscription');
-const Property = require('../models/Property');
-const Owner = require('../models/Owner');
+const PropertyView = require("../models/PropertyView");
+const UserSubscription = require("../models/UserSubscription");
+const Property = require("../models/Property");
+const Owner = require("../models/Owner");
 
 // View Owner Details
 const viewOwnerDetails = async (req, res) => {
@@ -10,35 +10,58 @@ const viewOwnerDetails = async (req, res) => {
 
   try {
     // 1. Check for active subscription
-    const subscription = await UserSubscription.findOne({ user: userId, status: 'active' }).populate('plan');
+    const subscription = await UserSubscription.findOne({
+      user: userId,
+      status: "active",
+    }).populate("plan");
 
     if (!subscription) {
       return res.status(403).json({
         success: false,
-        error: { message: 'No active subscription. Please subscribe to view owner details.' }
+        error: {
+          message: "No active subscription",
+          details: "Please subscribe to an active plan to view owner details.",
+        },
       });
     }
 
     // Check if subscription is expired (double check)
     if (new Date() > subscription.endDate) {
-      subscription.status = 'expired';
+      subscription.status = "expired";
       await subscription.save();
       return res.status(403).json({
         success: false,
-        error: { message: 'Subscription expired. Please renew.' }
+        error: {
+          message: "Subscription expired",
+          details:
+            "Your current subscription has expired. Please renew your plan.",
+        },
       });
     }
 
     // Helper to construct owner response
     const constructOwnerResponse = (property, ownerProfile) => {
-      const userDetails = ownerProfile && ownerProfile.user ? ownerProfile.user : {};
+      const userDetails =
+        ownerProfile && ownerProfile.user ? ownerProfile.user : {};
       const ownerDetails = property.ownerDetails || {};
 
       return {
-        name: ownerDetails.name || userDetails.name || (ownerProfile ? ownerProfile.name : '') || 'N/A',
-        email: ownerDetails.email || userDetails.email || (ownerProfile ? ownerProfile.email : '') || 'N/A',
-        phone: ownerDetails.phone || userDetails.phone || (ownerProfile ? ownerProfile.phone : '') || 'N/A',
-        verified: ownerProfile ? ownerProfile.verified : false
+        name:
+          ownerDetails.name ||
+          userDetails.name ||
+          (ownerProfile ? ownerProfile.name : "") ||
+          "N/A",
+        email:
+          ownerDetails.email ||
+          userDetails.email ||
+          (ownerProfile ? ownerProfile.email : "") ||
+          "N/A",
+        phone:
+          ownerDetails.phone ||
+          userDetails.phone ||
+          (ownerProfile ? ownerProfile.phone : "") ||
+          "N/A",
+        verified: ownerProfile ? ownerProfile.verified : false,
       };
     };
 
@@ -46,18 +69,29 @@ const viewOwnerDetails = async (req, res) => {
     const existingView = await PropertyView.findOne({
       user: userId,
       property: propertyId,
-      subscription: subscription._id
+      subscription: subscription._id,
     });
 
     if (existingView) {
       // Already viewed, just return owner details
-      const property = await Property.findById(propertyId).populate('owner');
-      if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      const property = await Property.findById(propertyId).populate("owner");
+      if (!property) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: "Property not found",
+            details: `No property found with ID: ${propertyId}`,
+          },
+        });
+      }
 
       // Fetch owner user details safely
       let ownerProfile = null;
       if (property.owner) {
-        ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
+        ownerProfile = await Owner.findById(property.owner).populate(
+          "user",
+          "name email phone"
+        );
       }
 
       const finalOwnerDetails = constructOwnerResponse(property, ownerProfile);
@@ -66,8 +100,8 @@ const viewOwnerDetails = async (req, res) => {
         success: true,
         data: {
           owner: finalOwnerDetails,
-          message: 'Owner details retrieved (already viewed)'
-        }
+          message: "Owner details retrieved (already viewed)",
+        },
       });
     }
 
@@ -75,7 +109,9 @@ const viewOwnerDetails = async (req, res) => {
     if (subscription.contactsViewed >= subscription.plan.contactLimit) {
       return res.status(403).json({
         success: false,
-        error: { message: 'Contact view limit reached for this subscription plan.' }
+        error: {
+          message: "Contact view limit reached for this subscription plan.",
+        },
       });
     }
 
@@ -83,7 +119,7 @@ const viewOwnerDetails = async (req, res) => {
     const newView = new PropertyView({
       user: userId,
       property: propertyId,
-      subscription: subscription._id
+      subscription: subscription._id,
     });
     await newView.save();
 
@@ -91,12 +127,23 @@ const viewOwnerDetails = async (req, res) => {
     await subscription.save();
 
     // Return owner details
-    const property = await Property.findById(propertyId).populate('owner');
-    if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+    const property = await Property.findById(propertyId).populate("owner");
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: "Property not found",
+          details: `No property found with ID: ${propertyId}`,
+        },
+      });
+    }
 
     let ownerProfile = null;
     if (property.owner) {
-      ownerProfile = await Owner.findById(property.owner).populate('user', 'name email phone');
+      ownerProfile = await Owner.findById(property.owner).populate(
+        "user",
+        "name email phone"
+      );
     }
 
     const finalOwnerDetails = constructOwnerResponse(property, ownerProfile);
@@ -105,14 +152,20 @@ const viewOwnerDetails = async (req, res) => {
       success: true,
       data: {
         owner: finalOwnerDetails,
-        remainingContacts: subscription.plan.contactLimit - subscription.contactsViewed,
-        message: 'Owner details retrieved successfully'
-      }
+        remainingContacts:
+          subscription.plan.contactLimit - subscription.contactsViewed,
+        message: "Owner details retrieved successfully",
+      },
     });
-
   } catch (error) {
-    console.error('View owner details error:', error);
-    res.status(500).json({ success: false, error: { message: 'Internal server error' } });
+    console.error("View owner details error:", error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
+    });
   }
 };
 
@@ -125,27 +178,42 @@ const getViewedProperties = async (req, res) => {
     // Requirement: "api which gives subscription details and propeties he has viewed"
     // Requirement: "once subscriptions has ended user losses his data" -> imply only current subscription views
 
-    const subscription = await UserSubscription.findOne({ user: userId, status: 'active' });
+    const subscription = await UserSubscription.findOne({
+      user: userId,
+      status: "active",
+    });
 
     if (!subscription) {
-      return res.status(200).json({ success: true, data: [], message: 'No active subscription, no viewed properties available.' });
+      return res
+        .status(200)
+        .json({
+          success: true,
+          data: [],
+          message: "No active subscription, no viewed properties available.",
+        });
     }
 
     const views = await PropertyView.find({ subscription: subscription._id })
       .populate({
-        path: 'property',
-        select: 'title location rent propertyType images'
+        path: "property",
+        select: "title location rent propertyType images",
       })
       .sort({ viewedAt: -1 });
 
     res.status(200).json({ success: true, data: views });
   } catch (error) {
-    console.error('Get viewed properties error:', error);
-    res.status(500).json({ success: false, error: { message: 'Internal server error' } });
+    console.error("Get viewed properties error:", error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
+    });
   }
 };
 
 module.exports = {
   viewOwnerDetails,
-  getViewedProperties
+  getViewedProperties,
 };
