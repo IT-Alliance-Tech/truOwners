@@ -1,28 +1,30 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const auth = require('../middlewares/auth');
-const { userAuth } = require('../middlewares/roleCheck');
-const userController = require('../controllers/userController');
+const auth = require("../middlewares/auth");
+const { userAuth } = require("../middlewares/roleCheck");
+const userController = require("../controllers/userController");
+const inquiryController = require("../controllers/inquiryController");
 
-router.get('/properties', userController.getAllProperties);
+router.get("/properties", userController.getAllProperties);
+router.post("/inquiries", inquiryController.createInquiry);
 
 // Apply auth middleware to all user routes
 router.use(auth);
 router.use(userAuth);
 
 // Property routes
-router.get('/properties/:id', userController.getPropertyById);
+router.get("/properties/:id", userController.getPropertyById);
 
 // Wishlist routes
-router.post('/wishlist', userController.addToWishlist);
-router.get('/wishlist', userController.getUserWishlist);
-router.delete('/wishlist', userController.removeFromWishlist);
+router.post("/wishlist", userController.addToWishlist);
+router.get("/wishlist", userController.getUserWishlist);
+router.delete("/wishlist", userController.removeFromWishlist);
 
 // Booking routes
-router.post('/bookings', userController.bookSiteVisit);
-router.get('/bookings', userController.getUserBookings);
+router.post("/bookings", userController.bookSiteVisit);
+router.get("/bookings", userController.getUserBookings);
 
 // Payment routes
-router.post('/unlock-contact', userController.unlockOwnerContact);
+router.post("/unlock-contact", userController.unlockOwnerContact);
 
 module.exports = router;
