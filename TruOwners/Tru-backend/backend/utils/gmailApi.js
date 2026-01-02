@@ -1,31 +1,38 @@
 const { OAuth2Client } = require("google-auth-library");
 const axios = require("axios");
 
-const clientId = process.env.GMAIL_CLIENT_ID;
-const clientSecret = process.env.GMAIL_CLIENT_SECRET;
-const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
-const user = process.env.GMAIL_USER;
-
-const oAuth2Client = new OAuth2Client(clientId, clientSecret);
-oAuth2Client.setCredentials({ refresh_token: refreshToken });
-
 async function sendMailHTTP({ to, subject, text, html, from }) {
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+  const gmailUser = process.env.GMAIL_USER;
+
+  if (!clientId || !clientSecret || !refreshToken || !gmailUser) {
+    console.error(
+      "❌ Gmail OAuth2 credentials missing in environment variables!"
+    );
+    throw new Error("Missing Gmail OAuth2 configuration");
+  }
+
+  const oAuth2Client = new OAuth2Client(clientId, clientSecret);
+  oAuth2Client.setCredentials({ refresh_token: refreshToken });
+
   try {
     const { token } = await oAuth2Client.getAccessToken();
+    console.log(`Sending email to: ${to}`);
 
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString(
       "base64"
     )}?=`;
     const messageParts = [
-      `From: ${from || user}`,
-      `To: ${to}`,
-      `Content-Type: text/html; charset=utf-8`,
-      `MIME-Version: 1.0`,
-      `Subject: ${utf8Subject}`,
-      "",
+      `From: ${from || gmailUser}\r\n`,
+      `To: ${to}\r\n`,
+      `Content-Type: text/html; charset=utf-8\r\n`,
+      `MIME-Version: 1.0\r\n`,
+      `Subject: ${utf8Subject}\r\n\r\n`,
       html || text,
     ];
-    const message = messageParts.join("\n");
+    const message = messageParts.join("");
 
     const encodedMessage = Buffer.from(message)
       .toString("base64")
@@ -44,11 +51,14 @@ async function sendMailHTTP({ to, subject, text, html, from }) {
       }
     );
 
+    console.log("✅ Gmail API Response:", res.data);
     return res.data;
   } catch (error) {
     console.error(
       "Gmail API Send Error:",
-      error.response ? error.response.data : error.message
+      error.response
+        ? JSON.stringify(error.response.data, null, 2)
+        : error.message
     );
     throw error;
   }
