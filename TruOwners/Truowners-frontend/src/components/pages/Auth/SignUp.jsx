@@ -1,108 +1,124 @@
-import React, { useState } from 'react'
-import { useAuth } from '../../../context/AuthContext' // Add this import
-import OTPVerification from './OTPVerification'
-import { buildApiUrl, API_CONFIG } from '../../../config/api'
-import './Auth.css'
+import React, { useState } from "react";
+import { useAuth } from "../../../context/AuthContext"; // Add this import
+import OTPVerification from "./OTPVerification";
+import { buildApiUrl, API_CONFIG } from "../../../config/api";
+import {
+  handleApiError,
+  getErrorMessage,
+  validateApiResponse,
+} from "../../../utils/errorHandler";
+import "./Auth.css";
 
 const SignUp = ({ onClose, onSwitchToLogin }) => {
-  const [currentStep, setCurrentStep] = useState('signup')
+  const [currentStep, setCurrentStep] = useState("signup");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'user' // Default to user, no selection needed
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [userEmail, setUserEmail] = useState('')
-  const { login } = useAuth() // Add this line
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "user", // Default to user, no selection needed
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const { login } = useAuth(); // Add this line
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }))
-    if (error) setError('')
-  }
+      [name]: value,
+    }));
+    if (error) setError("");
+  };
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      setError('Name is required')
-      return false
+      setError("Name is required");
+      return false;
     }
     if (!formData.email.trim()) {
-      setError('Email is required')
-      return false
+      setError("Email is required");
+      return false;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address')
-      return false
+      setError("Please enter a valid email address");
+      return false;
     }
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return false
+      setError("Password must be at least 8 characters long");
+      return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
+      setError("Passwords do not match");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const handleSignUp = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
     try {
       const response = await fetch(buildApiUrl(API_CONFIG.AUTH.REGISTER), {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.role
+          role: formData.role,
         }),
-      })
+      });
 
-      const data = await response.json()
+      let data;
+      try {
+        data = await response.json();
+        validateApiResponse(data);
+      } catch (parseError) {
+        throw new Error("Invalid response from server");
+      }
+
+      if (!response.ok) {
+        const errorMessage = handleApiError(null, response);
+        throw new Error(data.error?.message || errorMessage);
+      }
 
       if (data.success) {
-        setUserEmail(formData.email)
-        setCurrentStep('otp')
+        setUserEmail(formData.email);
+        setCurrentStep("otp");
       } else {
-        setError(data.error || 'Registration failed. Please try again.')
+        throw new Error(getErrorMessage(data));
       }
     } catch (err) {
-      setError('Network error. Please check your connection and try again.')
-      console.error('Registration error:', err)
+      setError(err.message || "Registration failed. Please try again.");
+      console.error("Registration error:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Updated handleOTPSuccess to accept user data and token
   const handleOTPSuccess = (userData, token) => {
-    console.log('User verified successfully!')
+    console.log("User verified successfully!");
     // Store user in auth context just like in Login
-    login(userData, token)
-    onClose && onClose()
-  }
+    login(userData, token);
+    onClose && onClose();
+  };
 
   const handleBackToSignUp = () => {
-    setCurrentStep('signup')
-    setError('')
-  }
+    setCurrentStep("signup");
+    setError("");
+  };
 
-  if (currentStep === 'otp') {
+  if (currentStep === "otp") {
     return (
       <OTPVerification
         email={userEmail}
@@ -110,14 +126,16 @@ const SignUp = ({ onClose, onSwitchToLogin }) => {
         onBack={handleBackToSignUp}
         onClose={onClose}
       />
-    )
+    );
   }
 
   return (
     <div className="auth-overlay">
       <div className="auth-modal">
         {onClose && (
-          <button className="auth-close" onClick={onClose}>×</button>
+          <button className="auth-close" onClick={onClose}>
+            ×
+          </button>
         )}
         <div className="auth-header">
           <h2>Create Your Account</h2>
@@ -157,7 +175,7 @@ const SignUp = ({ onClose, onSwitchToLogin }) => {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
             <input
@@ -211,14 +229,14 @@ const SignUp = ({ onClose, onSwitchToLogin }) => {
                 Creating Account...
               </>
             ) : (
-              'Create Account'
+              "Create Account"
             )}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Already have an account?{' '}
+            Already have an account?{" "}
             <button
               className="auth-link"
               onClick={onSwitchToLogin}
@@ -230,7 +248,7 @@ const SignUp = ({ onClose, onSwitchToLogin }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SignUp
+export default SignUp;

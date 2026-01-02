@@ -30,37 +30,31 @@ const register = async (req, res) => {
 
   try {
     if (!validateEmail(email)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { message: "Invalid email format" },
-          data: null,
-        });
+      return res.status(400).json({
+        success: false,
+        error: { message: "Invalid email format" },
+        data: null,
+      });
     }
 
     // Check if a VERIFIED user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser && existingUser.verified) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { message: "Email already in use" },
-          data: null,
-        });
+      return res.status(400).json({
+        success: false,
+        error: { message: "Email already in use" },
+        data: null,
+      });
     }
 
     // Validate ID proof for owner
     if (role === ROLES.OWNER) {
       if (!idProofNumber || !idProofType || !idProofImageUrl) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: { message: "Owner registration requires ID proof details" },
-            data: null,
-          });
+        return res.status(400).json({
+          success: false,
+          error: { message: "Owner registration requires ID proof details" },
+          data: null,
+        });
       }
     }
 
@@ -85,7 +79,24 @@ const register = async (req, res) => {
 
     // Generate and save OTP with registration data
     const otp = await generateAndSaveOTP(email, registrationData);
-    await sendOTPEmail(email, otp);
+
+    try {
+      await sendOTPEmail(email, otp);
+    } catch (emailError) {
+      console.error(
+        "Failed to send OTP email during registration:",
+        emailError
+      );
+      return res.status(500).json({
+        success: false,
+        error: {
+          message:
+            "Could not send verification email. Please check server configuration.",
+          details: emailError.message,
+        },
+        data: null,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -98,13 +109,11 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { message: "Internal server error", details: error.message },
-        data: null,
-      });
+    res.status(500).json({
+      success: false,
+      error: { message: "Internal server error", details: error.message },
+      data: null,
+    });
   }
 };
 
@@ -163,8 +172,10 @@ const updateUser = async (req, res) => {
     console.error("Update user error:", error);
     res.status(500).json({
       success: false,
-      error: { message: "Internal server error", details: error.message },
-      data: null,
+      error: {
+        message: "Internal server error",
+        details: error.message,
+      },
     });
   }
 };

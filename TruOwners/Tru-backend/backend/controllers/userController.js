@@ -18,6 +18,7 @@ const getAllProperties = async (req, res) => {
         success: false,
         error: {
           message: "Page number must be greater than 0",
+          details: "Pagination error: page parameter must be 1 or higher.",
         },
         data: null,
       });
@@ -29,6 +30,7 @@ const getAllProperties = async (req, res) => {
         success: false,
         error: {
           message: "Limit must be between 1 and 100",
+          details: "Pagination error: limit parameter must be within [1, 100].",
         },
         data: null,
       });
@@ -334,7 +336,10 @@ const getPropertyById = async (req, res) => {
       return res.status(404).json({
         statusCode: 404,
         success: false,
-        error: { message: "Property not found" },
+        error: {
+          message: "Property not found",
+          details: `No property found with ID: ${id}`,
+        },
         data: null,
       });
     }
@@ -421,6 +426,7 @@ const addToWishlist = async (req, res) => {
         success: false,
         error: {
           message: "Property not found or not available",
+          details: `No published property found with ID: ${propertyId}`,
         },
         data: null,
       });
@@ -495,6 +501,7 @@ const bookSiteVisit = async (req, res) => {
         success: false,
         error: {
           message: "Property ID and visit date are required",
+          details: "Validation error: propertyId or visitDate is missing.",
         },
         data: null,
       });
@@ -507,6 +514,7 @@ const bookSiteVisit = async (req, res) => {
         success: false,
         error: {
           message: "Property not found or not available for booking",
+          details: `No published property found with ID: ${propertyId}`,
         },
         data: null,
       });
@@ -524,8 +532,9 @@ const bookSiteVisit = async (req, res) => {
         statusCode: 400,
         success: false,
         error: {
-          message:
-            "You already have a pending site visit request for this property",
+          message: "Pending request exists",
+          details:
+            "You already have a pending site visit request for this property.",
         },
         data: null,
       });
@@ -611,6 +620,7 @@ const unlockOwnerContact = async (req, res) => {
         success: false,
         error: {
           message: "Property not found",
+          details: `No property found with ID: ${propertyId}`,
         },
         data: null,
       });
@@ -622,6 +632,7 @@ const unlockOwnerContact = async (req, res) => {
         success: false,
         error: {
           message: "Property is not available",
+          details: "The selected property is not currently published.",
         },
         data: null,
       });
@@ -655,7 +666,8 @@ const unlockOwnerContact = async (req, res) => {
         statusCode: 400,
         success: false,
         error: {
-          message: "Payment processing failed. Please try again.",
+          message: "Payment processing failed",
+          details: "Mock payment processing failed. Please try again.",
         },
         data: null,
       });

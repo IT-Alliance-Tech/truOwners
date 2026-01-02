@@ -330,8 +330,8 @@ const updateProperty = async (req, res) => {
       statusCode: 400,
       success: false,
       error: {
-        message:
-          "Invalid updates! Allowed fields: " + allowedUpdates.join(", "),
+        message: "Invalid updates",
+        details: "Allowed fields: " + allowedUpdates.join(", "),
       },
       data: null,
     });
