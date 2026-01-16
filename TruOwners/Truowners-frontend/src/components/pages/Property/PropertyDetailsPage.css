@@ -761,7 +761,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-2);
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, #94a3b8, #64748b);
   color: white;
   border: none;
   padding: var(--spacing-4) var(--spacing-4);
@@ -774,9 +774,9 @@
 }
 
 .wishlist-sidebar-btn:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  background: linear-gradient(135deg, #64748b, #475569);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
 }
 
 .wishlist-sidebar-btn.active {
@@ -1173,14 +1173,16 @@
 
 
 /* Locked Contact Button */
+/* Locked Contact Button */
 .contact-btn.locked {
-  background: linear-gradient(135deg, #94a3b8, #64748b);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   cursor: pointer;
 }
 
 .contact-btn.locked:hover {
-  background: linear-gradient(135deg, #64748b, #475569);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
 }
 
 /* Owner Info Highlight */
