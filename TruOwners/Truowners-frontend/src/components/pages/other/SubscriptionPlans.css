@@ -102,10 +102,13 @@
 /* Plans Grid */
 .plans-display-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 40px;
   margin-bottom: 60px;
   padding: 10px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .premium-plan-card {

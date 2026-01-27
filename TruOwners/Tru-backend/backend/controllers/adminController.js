@@ -119,7 +119,7 @@ const buildPropertyFiltersForAdmin = (query) => {
 
   // property id (only if valid ObjectId)
   if (propertyId && mongoose.Types.ObjectId.isValid(propertyId)) {
-    filters._id = mongoose.Types.ObjectId(propertyId);
+    filters._id = new mongoose.Types.ObjectId(propertyId);
   }
 
   // status - allow case-insensitive match (accept 'published' or 'PUBLISHED')
@@ -738,32 +738,35 @@ const getAllPropertiesForAdmin = async (req, res) => {
     });
 
     const ownerFilterCriteria = {};
+    const ownerOrClauses = [];
+
     if (customerEmail && isNonEmptyString(customerEmail)) {
-      ownerFilterCriteria.email = new RegExp(`^${customerEmail}$`, "i");
+      ownerOrClauses.push({
+        email: new RegExp(`^${customerEmail}$`, "i"),
+      });
     }
     if (customerName && isNonEmptyString(customerName)) {
-      ownerFilterCriteria.$or = ownerFilterCriteria.$or || [];
-      ownerFilterCriteria.$or.push({ name: new RegExp(customerName, "i") });
-      ownerFilterCriteria.$or.push({
-        "user.name": new RegExp(customerName, "i"),
-      });
-      ownerFilterCriteria.$or.push({
-        "user.firstName": new RegExp(customerName, "i"),
-      });
-      ownerFilterCriteria.$or.push({
-        "user.lastName": new RegExp(customerName, "i"),
-      });
+      const nameRegex = new RegExp(customerName, "i");
+      ownerOrClauses.push({ name: nameRegex });
+      ownerOrClauses.push({ "user.name": nameRegex });
+      ownerOrClauses.push({ "user.firstName": nameRegex });
+      ownerOrClauses.push({ "user.lastName": nameRegex });
     }
     if (customerPhone && isNonEmptyString(customerPhone)) {
-      ownerFilterCriteria.$or = ownerFilterCriteria.$or || [];
-      ownerFilterCriteria.$or.push({ phone: new RegExp(customerPhone, "i") });
-      ownerFilterCriteria.$or.push({ mobile: new RegExp(customerPhone, "i") });
-      ownerFilterCriteria.$or.push({
-        "user.phone": new RegExp(customerPhone, "i"),
-      });
+      const phoneRegex = new RegExp(customerPhone, "i");
+      ownerOrClauses.push({ phone: phoneRegex });
+      ownerOrClauses.push({ mobile: phoneRegex });
+      ownerOrClauses.push({ "user.phone": phoneRegex });
     }
 
-    if (Object.keys(ownerFilterCriteria).length > 0) {
+    if (ownerOrClauses.length > 0) {
+      // Construct proper MongoDB query with $or
+      if (ownerOrClauses.length === 1) {
+        Object.assign(ownerFilterCriteria, ownerOrClauses[0]);
+      } else {
+        ownerFilterCriteria.$or = ownerOrClauses;
+      }
+
       // find matching owner ids
       const matchingOwners = await Owner.find(ownerFilterCriteria)
         .select("_id")

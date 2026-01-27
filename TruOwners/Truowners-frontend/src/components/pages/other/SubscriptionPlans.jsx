@@ -168,6 +168,11 @@ const SubscriptionPlans = () => {
         {/* Plans Grid */}
         <div className="plans-display-grid">
           {plans.map((plan) => {
+            // Comment out Diamond Plan - do not render
+            if (plan.name.toLowerCase().includes("diamond")) {
+              return null;
+            }
+
             const style = getPlanStyle(plan.name);
             const isCurrent = currentSubscription?.plan._id === plan._id;
             const isPopular = plan.name.toLowerCase().includes("gold");
@@ -182,7 +187,7 @@ const SubscriptionPlans = () => {
 
                 <div className="card-header" style={{ background: style.gradient }}>
                   <div className="plan-icon">{style.icon}</div>
-                  <h2 className="plan-title" style={{ color: style.accent }}>{plan.name}</h2>
+                  <h2 className="plan-title" style={{ color: style.accent }}>{plan.name === "Gold Plan" ? "DIAMOND PLAN" : plan.name}</h2>
                   <div className="plan-price-container">
                     <span className="currency">₹</span>
                     <span className="price">{plan.price}</span>
