@@ -761,7 +761,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-2);
-  background: linear-gradient(135deg, #94a3b8, #64748b);
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
   color: white;
   border: none;
   padding: var(--spacing-4) var(--spacing-4);
@@ -774,9 +774,9 @@
 }
 
 .wishlist-sidebar-btn:hover {
-  background: linear-gradient(135deg, #64748b, #475569);
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
 }
 
 .wishlist-sidebar-btn.active {
@@ -786,7 +786,6 @@
 .wishlist-sidebar-btn.active:hover {
   background: linear-gradient(135deg, #16a34a, #15803d);
 }
-
 .wishlist-sidebar-btn.loading {
   pointer-events: none;
   opacity: 0.7;

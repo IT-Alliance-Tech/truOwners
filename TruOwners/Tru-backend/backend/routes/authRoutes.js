@@ -18,6 +18,12 @@ router.post('/send-otp', authController.sendOTP);
 // Validate OTP
 router.post('/validate-otp', authController.validateOTP);
 
+// SMS OTP - Send
+router.post('/sms/send-otp', authController.sendSMSOTP);
+
+// SMS OTP - Verify
+router.post('/sms/verify-otp', authController.verifySMSOTP);
+
 // Forgot Password - Request OTP
 router.post('/forgot-password', authController.forgotPasswordRequest);
 

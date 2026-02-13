@@ -685,6 +685,134 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// In-memory SMS OTP storage
+const smsOTPStore = {};
+
+// Generate 6-digit OTP
+const generateSMSOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send SMS OTP (Dummy - logs to console)
+const sendSMSOTP = async (req, res) => {
+  const { phone } = req.body;
+
+  try {
+    if (!phone) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Phone number is required" },
+        data: null,
+      });
+    }
+
+    // Generate OTP
+    const otp = generateSMSOTP();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+
+    // Store in memory
+    smsOTPStore[phone] = {
+      otp,
+      expiresAt,
+      verified: false,
+    };
+
+    // Dummy SMS log
+    console.log(`\n📱 DUMMY SMS → Phone: ${phone}, OTP: ${otp}`);
+
+    res.status(200).json({
+      statusCode: 200,
+      success: true,
+      error: null,
+      data: {
+        message: "OTP sent successfully (dummy SMS)",
+        phone,
+      },
+    });
+  } catch (error) {
+    console.error("Send SMS OTP error:", error);
+    res.status(500).json({
+      statusCode: 500,
+      success: false,
+      error: { message: "Internal server error", details: error.message },
+      data: null,
+    });
+  }
+};
+
+// Verify SMS OTP
+const verifySMSOTP = async (req, res) => {
+  const { phone, otp } = req.body;
+
+  try {
+    if (!phone || !otp) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Phone number and OTP are required" },
+        data: null,
+      });
+    }
+
+    // Check if OTP exists
+    const otpRecord = smsOTPStore[phone];
+    if (!otpRecord) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "OTP not found or expired" },
+        data: null,
+      });
+    }
+
+    // Check expiry
+    if (Date.now() > otpRecord.expiresAt) {
+      delete smsOTPStore[phone];
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "OTP expired" },
+        data: null,
+      });
+    }
+
+    // Verify OTP
+    if (otpRecord.otp !== otp) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Invalid OTP" },
+        data: null,
+      });
+    }
+
+    // Mark as verified
+    otpRecord.verified = true;
+
+    console.log(`✅ SMS OTP VERIFIED → Phone: ${phone}`);
+
+    res.status(200).json({
+      statusCode: 200,
+      success: true,
+      error: null,
+      data: {
+        message: "OTP verified successfully",
+        phone,
+        verified: true,
+      },
+    });
+  } catch (error) {
+    console.error("Verify SMS OTP error:", error);
+    res.status(500).json({
+      statusCode: 500,
+      success: false,
+      error: { message: "Internal server error", details: error.message },
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   register,
   validateOTP,
@@ -696,4 +824,6 @@ module.exports = {
   resetPassword,
   updateUser,
   deleteUser,
+  sendSMSOTP,
+  verifySMSOTP,
 };
