@@ -944,10 +944,9 @@ const updatePropertyForAdmin = async (req, res) => {
       property.propertyType = "office"; // ✅ FIX
       property.category = "commercial";
     } else {
+      // Use the new propertyType from request if provided, else fallback to existing, else default to 'apartment'
       property.propertyType =
-        property.propertyType && property.propertyType !== "commercial"
-          ? property.propertyType
-          : "apartment";
+        propertyData.propertyType || property.propertyType || "apartment";
 
       property.category = "residential";
 
