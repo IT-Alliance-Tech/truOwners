@@ -28,31 +28,43 @@ const buildOTPMessage = (otp) => {
 };
 
 /**
- * Sanitize phone number for MySMSMantra.
- * MySMSMantra expects 10-digit Indian mobile numbers WITHOUT +91 or 91 prefix.
+ * Sanitize and format phone number for MySMSMantra.
+ * MySMSMantra expects 91-prefixed 12-digit Indian mobile numbers.
+ * Returns "91XXXXXXXXXX" or null if invalid.
  */
 const sanitizePhoneNumber = (phone) => {
   if (!phone) return null;
 
+  console.log(`📞 [SMS Service] Raw phone received: "${phone}"`);
+
   // Remove all non-digit characters
   let cleaned = phone.replace(/\D/g, "");
 
-  // Remove leading 91 country code if present (and number is > 10 digits)
+  console.log(`📞 [SMS Service] After removing non-digits: "${cleaned}" (length: ${cleaned.length})`);
+
+  // If already 12 digits starting with 91 → valid, keep as is
   if (cleaned.length === 12 && cleaned.startsWith("91")) {
-    cleaned = cleaned.substring(2);
+    console.log(`📞 [SMS Service] Already 91-prefixed: "${cleaned}"`);
+    return cleaned;
   }
 
-  // Remove leading 0 if present
+  // If 10 digits → prefix with 91
+  if (cleaned.length === 10) {
+    const formatted = `91${cleaned}`;
+    console.log(`📞 [SMS Service] Prefixed with 91: "${formatted}"`);
+    return formatted;
+  }
+
+  // Remove leading 0 if 11 digits (e.g. 07019710774)
   if (cleaned.length === 11 && cleaned.startsWith("0")) {
-    cleaned = cleaned.substring(1);
+    const formatted = `91${cleaned.substring(1)}`;
+    console.log(`📞 [SMS Service] Stripped leading 0, prefixed 91: "${formatted}"`);
+    return formatted;
   }
 
-  // Validate: must be exactly 10 digits
-  if (cleaned.length !== 10) {
-    return null;
-  }
-
-  return cleaned;
+  // Invalid format
+  console.error(`❌ [SMS Service] Invalid phone format: "${phone}" → cleaned: "${cleaned}" (length: ${cleaned.length})`);
+  return null;
 };
 
 /**
@@ -90,7 +102,7 @@ const sendSMS = async (mobileNumber, message) => {
   // ─── Sanitize phone number ───
   const cleanNumber = sanitizePhoneNumber(mobileNumber);
   if (!cleanNumber) {
-    const errorMsg = `Invalid phone number format: "${mobileNumber}" — must be a 10-digit Indian mobile number`;
+    const errorMsg = `Invalid phone number format: "${mobileNumber}" — must be a 10-digit or 91-prefixed 12-digit Indian mobile number`;
     console.error(`❌ [SMS Service] ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
@@ -103,8 +115,8 @@ const sendSMS = async (mobileNumber, message) => {
     SenderId: senderId,
     Message: message,
     MobileNumbers: cleanNumber,
-    Is_Unicode: "0",
-    Is_Flash: "0",
+    Is_Unicode: false,
+    Is_Flash: false,
     TemplateId: templateId,
   });
 
