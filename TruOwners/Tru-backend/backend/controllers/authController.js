@@ -4,6 +4,7 @@ const Owner = require("../models/Owner");
 const UserSubscription = require("../models/UserSubscription");
 const jwt = require("jsonwebtoken");
 const { sendOTPEmail } = require("../services/emailService");
+const { sendOTPSMS } = require("../services/smsService");
 const { generateAndSaveOTP, verifyOTP } = require("../services/otpService");
 const { validateEmail } = require("../utils/helpers");
 const { ROLES } = require("../utils/constants");
@@ -685,7 +686,7 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// In-memory SMS OTP storage
+// In-memory SMS OTP storage (consider using MongoDB/Redis for production scaling)
 const smsOTPStore = {};
 
 // Generate 6-digit OTP
@@ -693,11 +694,12 @@ const generateSMSOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send SMS OTP (Dummy - logs to console)
+// Send SMS OTP via MySMSMantra
 const sendSMSOTP = async (req, res) => {
   const { phone } = req.body;
 
   try {
+    // ─── Validate phone number ───
     if (!phone) {
       return res.status(400).json({
         statusCode: 400,
@@ -707,7 +709,25 @@ const sendSMSOTP = async (req, res) => {
       });
     }
 
-    // Generate OTP
+    // Validate phone format before proceeding
+    const cleanPhone = phone.replace(/\D/g, "");
+    let tenDigitPhone = cleanPhone;
+    if (cleanPhone.length === 12 && cleanPhone.startsWith("91")) {
+      tenDigitPhone = cleanPhone.substring(2);
+    }
+    if (cleanPhone.length === 11 && cleanPhone.startsWith("0")) {
+      tenDigitPhone = cleanPhone.substring(1);
+    }
+    if (tenDigitPhone.length !== 10) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Invalid phone number. Must be a 10-digit Indian mobile number." },
+        data: null,
+      });
+    }
+
+    // ─── Generate OTP ───
     const otp = generateSMSOTP();
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
 
@@ -718,20 +738,40 @@ const sendSMSOTP = async (req, res) => {
       verified: false,
     };
 
-    // Dummy SMS log
-    console.log(`\n📱 DUMMY SMS → Phone: ${phone}, OTP: ${otp}`);
+    console.log(`\n📱 [SMS OTP] Generated OTP for ${phone}: ${otp}`);
+
+    // ─── Send SMS via MySMSMantra ───
+    const smsResult = await sendOTPSMS(phone, otp);
+
+    if (!smsResult.success) {
+      console.error(`❌ [SMS OTP] Failed to send SMS to ${phone}:`, smsResult.error);
+      // Clean up OTP store on failure
+      delete smsOTPStore[phone];
+      return res.status(500).json({
+        statusCode: 500,
+        success: false,
+        error: {
+          message: "Failed to send OTP SMS. Please try again.",
+          details: smsResult.error,
+          providerResponse: smsResult.providerResponse || null,
+        },
+        data: null,
+      });
+    }
+
+    console.log(`✅ [SMS OTP] SMS sent successfully to ${phone}`);
 
     res.status(200).json({
       statusCode: 200,
       success: true,
       error: null,
       data: {
-        message: "OTP sent successfully (dummy SMS)",
+        message: "OTP sent successfully",
         phone,
       },
     });
   } catch (error) {
-    console.error("Send SMS OTP error:", error);
+    console.error("❌ [SMS OTP] Unhandled error in sendSMSOTP:", error);
     res.status(500).json({
       statusCode: 500,
       success: false,
@@ -755,13 +795,16 @@ const verifySMSOTP = async (req, res) => {
       });
     }
 
+    console.log(`\n🔐 [SMS OTP Verify] Attempting verification for ${phone}`);
+
     // Check if OTP exists
     const otpRecord = smsOTPStore[phone];
     if (!otpRecord) {
+      console.log(`❌ [SMS OTP Verify] No OTP record found for ${phone}`);
       return res.status(400).json({
         statusCode: 400,
         success: false,
-        error: { message: "OTP not found or expired" },
+        error: { message: "OTP not found or expired. Please request a new OTP." },
         data: null,
       });
     }
@@ -769,16 +812,18 @@ const verifySMSOTP = async (req, res) => {
     // Check expiry
     if (Date.now() > otpRecord.expiresAt) {
       delete smsOTPStore[phone];
+      console.log(`❌ [SMS OTP Verify] OTP expired for ${phone}`);
       return res.status(400).json({
         statusCode: 400,
         success: false,
-        error: { message: "OTP expired" },
+        error: { message: "OTP expired. Please request a new OTP." },
         data: null,
       });
     }
 
     // Verify OTP
     if (otpRecord.otp !== otp) {
+      console.log(`❌ [SMS OTP Verify] OTP mismatch for ${phone}: expected=${otpRecord.otp}, received=${otp}`);
       return res.status(400).json({
         statusCode: 400,
         success: false,
@@ -787,10 +832,21 @@ const verifySMSOTP = async (req, res) => {
       });
     }
 
-    // Mark as verified
+    // Mark as verified and clean up
     otpRecord.verified = true;
+    delete smsOTPStore[phone]; // Clean up after successful verification
 
-    console.log(`✅ SMS OTP VERIFIED → Phone: ${phone}`);
+    console.log(`✅ [SMS OTP Verify] OTP verified successfully for ${phone}`);
+
+    // Find user by phone number
+    let user = await User.findOne({ phone });
+    let token = null;
+
+    if (user) {
+      // If user exists, generate token for login
+      token = await generateToken(user);
+      console.log(`✅ [SMS OTP Verify] User found, token generated for ${phone}`);
+    }
 
     res.status(200).json({
       statusCode: 200,
@@ -800,10 +856,21 @@ const verifySMSOTP = async (req, res) => {
         message: "OTP verified successfully",
         phone,
         verified: true,
+        token: token || undefined,
+        user: user
+          ? {
+              id: user._id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              phone: user.phone,
+              isVerified: user.verified,
+            }
+          : undefined,
       },
     });
   } catch (error) {
-    console.error("Verify SMS OTP error:", error);
+    console.error("❌ [SMS OTP Verify] Unhandled error:", error);
     res.status(500).json({
       statusCode: 500,
       success: false,
