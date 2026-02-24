@@ -190,12 +190,22 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
       return;
     }
 
+    // Basic phone validation
+    const cleanPhone = formData.phone.replace(/\D/g, "");
+    let digits = cleanPhone;
+    if (digits.length === 12 && digits.startsWith("91")) digits = digits.substring(2);
+    if (digits.length === 11 && digits.startsWith("0")) digits = digits.substring(1);
+    if (digits.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
       const response = await fetch(
-        buildApiUrl("/auth/sms/send-otp"),
+        buildApiUrl(API_CONFIG.AUTH.SMS_SEND_OTP),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -206,11 +216,12 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || "Failed to send SMS OTP");
+        throw new Error(data.error?.message || data.error?.details || "Failed to send SMS OTP");
       }
 
       if (data.success) {
         setStep("sms-verify");
+        setOtp(["", "", "", "", "", ""]);
         setResendCooldown(60);
         const timer = setInterval(() => {
           setResendCooldown((prev) => {
@@ -246,7 +257,7 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
 
     try {
       const response = await fetch(
-        buildApiUrl("/auth/sms/verify-otp"),
+        buildApiUrl(API_CONFIG.AUTH.SMS_VERIFY_OTP),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -264,14 +275,24 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
       }
 
       if (data.success) {
-        setError("");
-        alert(`✅ SMS OTP verified successfully for ${formData.phone}`);
-        handleBackToLogin();
+        // If backend returned a token + user, log them in
+        if (data.data?.token && data.data?.user) {
+          login(data.data.user, data.data.token);
+          onClose && onClose();
+        } else {
+          // Phone verified but no account linked — inform user
+          setError("");
+          setStep("login");
+          setLoginMethod("password");
+          setError("Phone verified! Please login with your email and password, or register first.");
+        }
       } else {
         throw new Error(data.error?.message || "Invalid OTP");
       }
     } catch (err) {
       setError(err.message || "Failed to verify OTP. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
       console.error("Verify SMS OTP error:", err);
     } finally {
       setLoading(false);
@@ -379,13 +400,15 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
   };
 
   // ===== RENDER STEPS =====
+
+  // SMS OTP VERIFY STEP
   if (step === "sms-verify") {
     return (
       <div className="auth-overlay">
         <div className="auth-modal">
           <div className="auth-header">
             <h2>Enter OTP</h2>
-            <p>We've sent a 6-digit code to</p>
+            <p>We've sent a 6-digit code via SMS to</p>
             <p className="email-highlight">{formData.phone}</p>
             {onClose && (
               <button className="auth-close" onClick={onClose}>
@@ -436,7 +459,7 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                   Verifying...
                 </>
               ) : (
-                "Verify OTP"
+                "Verify & Login"
               )}
             </button>
           </form>
@@ -720,7 +743,7 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your 10-digit mobile number"
                   required
                   style={{ marginBottom: "10px" }}
                 />
@@ -782,6 +805,8 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                 </>
               ) : loginMethod === "password" ? (
                 "Sign In"
+              ) : loginMethod === "sms" ? (
+                "Send SMS OTP"
               ) : (
                 "Send OTP"
               )}
