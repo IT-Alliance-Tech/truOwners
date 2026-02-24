@@ -13,11 +13,13 @@ import {
 
 const Login = ({ onClose, onSwitchToSignUp }) => {
   const [loginMethod, setLoginMethod] = useState("password"); // 'password', 'otp', or 'sms'
-  const [step, setStep] = useState("login"); // 'login', 'otp-verify', 'sms-verify', 'forgot', 'forgot-otp'
+  const [step, setStep] = useState("login"); // 'login', 'otp-verify', 'sms-verify', 'complete-profile', 'forgot', 'forgot-otp'
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     phone: "",
+    profileName: "",
+    profileEmail: "",
   });
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -181,108 +183,183 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
     }
   };
 
-  // ===== SMS OTP HANDLERS (TEMPORARILY DISABLED) =====
-  // const handleSendSMSOTP = async (e) => {
-  //   e.preventDefault();
-  //
-  //   if (!formData.phone) {
-  //     setError("Please enter your phone number");
-  //     return;
-  //   }
-  //
-  //   setLoading(true);
-  //   setError("");
-  //
-  //   try {
-  //     const response = await fetch(
-  //       buildApiUrl("/auth/sms/send-otp"),
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ phone: formData.phone }),
-  //       }
-  //     );
-  //
-  //     const data = await response.json();
-  //
-  //     if (!response.ok) {
-  //       throw new Error(data.error?.message || "Failed to send SMS OTP");
-  //     }
-  //
-  //     if (data.success) {
-  //       setStep("sms-verify");
-  //       setResendCooldown(60);
-  //       const timer = setInterval(() => {
-  //         setResendCooldown((prev) => {
-  //           if (prev <= 1) {
-  //             clearInterval(timer);
-  //             return 0;
-  //           }
-  //           return prev - 1;
-  //         });
-  //       }, 1000);
-  //     } else {
-  //       throw new Error(data.error?.message || "Failed to send OTP");
-  //     }
-  //   } catch (err) {
-  //     console.error("Send SMS OTP error:", err);
-  //     setError(err.message || "Failed to send SMS OTP. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  //
-  // const handleVerifySMSOTP = async (e) => {
-  //   e.preventDefault();
-  //
-  //   const otpString = otp.join("");
-  //   if (otpString.length !== 6) {
-  //     setError("Please enter the complete 6-digit OTP");
-  //     return;
-  //   }
-  //
-  //   setLoading(true);
-  //   setError("");
-  //
-  //   try {
-  //     const response = await fetch(
-  //       buildApiUrl("/auth/sms/verify-otp"),
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           phone: formData.phone,
-  //           otp: otpString,
-  //         }),
-  //       }
-  //     );
-  //
-  //     const data = await response.json();
-  //
-  //     if (!response.ok) {
-  //       throw new Error(data.error?.message || "Failed to verify OTP");
-  //     }
-  //
-  //     if (data.success) {
-  //       setError("");
-  //       alert(`✅ SMS OTP verified successfully for ${formData.phone}`);
-  //       handleBackToLogin();
-  //     } else {
-  //       throw new Error(data.error?.message || "Invalid OTP");
-  //     }
-  //   } catch (err) {
-  //     setError(err.message || "Failed to verify OTP. Please try again.");
-  //     console.error("Verify SMS OTP error:", err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  //
-  // const handleResendSMSOTP = () => {
-  //   if (resendCooldown > 0) return;
-  //   const fakeEvent = { preventDefault: () => {} };
-  //   handleSendSMSOTP(fakeEvent);
-  // };
+  // ===== SMS OTP HANDLERS =====
+  const handleSendSMSOTP = async (e) => {
+    e.preventDefault();
+
+    if (!formData.phone) {
+      setError("Please enter your phone number");
+      return;
+    }
+
+    // Basic phone validation
+    const cleanPhone = formData.phone.replace(/\D/g, "");
+    let digits = cleanPhone;
+    if (digits.length === 12 && digits.startsWith("91")) digits = digits.substring(2);
+    if (digits.length === 11 && digits.startsWith("0")) digits = digits.substring(1);
+    if (digits.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.AUTH.SMS_SEND_OTP),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: formData.phone }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || data.error?.details || "Failed to send SMS OTP");
+      }
+
+      if (data.success) {
+        setStep("sms-verify");
+        setOtp(["", "", "", "", "", ""]);
+        setResendCooldown(60);
+        const timer = setInterval(() => {
+          setResendCooldown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        throw new Error(data.error?.message || "Failed to send OTP");
+      }
+    } catch (err) {
+      console.error("Send SMS OTP error:", err);
+      setError(err.message || "Failed to send SMS OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySMSOTP = async (e) => {
+    e.preventDefault();
+
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      setError("Please enter the complete 6-digit OTP");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.AUTH.SMS_VERIFY_OTP),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: formData.phone,
+            otp: otpString,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Failed to verify OTP");
+      }
+
+      if (data.success) {
+        // If backend returned a token + user, log them in (existing user)
+        if (data.data?.token && data.data?.user) {
+          login(data.data.user, data.data.token);
+          onClose && onClose();
+        } else if (data.data?.profileRequired) {
+          // New user — phone verified but no account, show profile form
+          setFormData((prev) => ({
+            ...prev,
+            phone: data.data.tempPhone || prev.phone,
+          }));
+          setError("");
+          setStep("complete-profile");
+        } else {
+          // Fallback — shouldn't happen with updated backend
+          setError("");
+          setStep("login");
+          setLoginMethod("password");
+          setError("Phone verified! Please login with your email and password, or register first.");
+        }
+      } else {
+        throw new Error(data.error?.message || "Invalid OTP");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to verify OTP. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+      console.error("Verify SMS OTP error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendSMSOTP = () => {
+    if (resendCooldown > 0) return;
+    const fakeEvent = { preventDefault: () => {} };
+    handleSendSMSOTP(fakeEvent);
+  };
+
+  // ===== COMPLETE PROFILE HANDLER (new user after SMS OTP) =====
+  const handleCompleteProfile = async (e) => {
+    e.preventDefault();
+
+    if (!formData.profileName || !formData.profileEmail) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.AUTH.COMPLETE_PROFILE),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.profileName,
+            email: formData.profileEmail,
+            phone: formData.phone,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Failed to create profile");
+      }
+
+      if (data.success && data.data?.token && data.data?.user) {
+        login(data.data.user, data.data.token);
+        onClose && onClose();
+      } else {
+        throw new Error(data.error?.message || "Something went wrong");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to complete profile. Please try again.");
+      console.error("Complete profile error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOTPLogin = async (e) => {
     e.preventDefault();
@@ -380,97 +457,190 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
 
   // ===== RENDER STEPS =====
 
-  // SMS OTP VERIFY STEP (TEMPORARILY DISABLED)
-  // if (step === "sms-verify") {
-  //   return (
-  //     <div className="auth-overlay">
-  //       <div className="auth-modal">
-  //         <div className="auth-header">
-  //           <h2>Enter OTP</h2>
-  //           <p>We've sent a 6-digit code to</p>
-  //           <p className="email-highlight">{formData.phone}</p>
-  //           {onClose && (
-  //             <button className="auth-close" onClick={onClose}>
-  //               ×
-  //             </button>
-  //           )}
-  //         </div>
-  //
-  //         <form
-  //           className="auth-form"
-  //           onSubmit={handleVerifySMSOTP}
-  //         >
-  //           {error && (
-  //             <div className="auth-error">
-  //               <span>⚠</span>
-  //               {error}
-  //             </div>
-  //           )}
-  //
-  //           <div className="otp-container">
-  //             <label className="otp-label">Enter verification code</label>
-  //             <div className="otp-inputs">
-  //               {otp.map((digit, index) => (
-  //                 <input
-  //                   key={index}
-  //                   ref={(el) => (inputRefs.current[index] = el)}
-  //                   type="text"
-  //                   inputMode="numeric"
-  //                   maxLength="1"
-  //                   value={digit}
-  //                   onChange={(e) => handleOTPChange(index, e.target.value)}
-  //                   onKeyDown={(e) => handleKeyDown(index, e)}
-  //                   className="otp-input"
-  //                   autoComplete="off"
-  //                 />
-  //               ))}
-  //             </div>
-  //           </div>
-  //
-  //           <button
-  //             type="submit"
-  //             className="btn btn-primary btn-full"
-  //             disabled={loading}
-  //           >
-  //             {loading ? (
-  //               <>
-  //                 <span className="loading-spinner"></span>
-  //                 Verifying...
-  //               </>
-  //             ) : (
-  //               "Verify OTP"
-  //             )}
-  //           </button>
-  //         </form>
-  //
-  //         <div className="auth-footer">
-  //           <p>
-  //             Didn't receive the code?{" "}
-  //             <button
-  //               className={`auth-link ${resendCooldown > 0 ? "disabled" : ""}`}
-  //               onClick={handleResendSMSOTP}
-  //               disabled={resendCooldown > 0}
-  //               type="button"
-  //             >
-  //               {resendCooldown > 0
-  //                 ? `Resend in ${resendCooldown}s`
-  //                 : "Resend Code"}
-  //             </button>
-  //           </p>
-  //           <p>
-  //             <button
-  //               className="auth-link"
-  //               onClick={handleBackToLogin}
-  //               type="button"
-  //             >
-  //               ← Back to Login
-  //             </button>
-  //           </p>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // SMS OTP VERIFY STEP
+  if (step === "sms-verify") {
+    return (
+      <div className="auth-overlay">
+        <div className="auth-modal">
+          <div className="auth-header">
+            <h2>Enter OTP</h2>
+            <p>We've sent a 6-digit code via SMS to</p>
+            <p className="email-highlight">{formData.phone}</p>
+            {onClose && (
+              <button className="auth-close" onClick={onClose}>
+                ×
+              </button>
+            )}
+          </div>
+
+          <form
+            className="auth-form"
+            onSubmit={handleVerifySMSOTP}
+          >
+            {error && (
+              <div className="auth-error">
+                <span>⚠</span>
+                {error}
+              </div>
+            )}
+
+            <div className="otp-container">
+              <label className="otp-label">Enter verification code</label>
+              <div className="otp-inputs">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleOTPChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="otp-input"
+                    autoComplete="off"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Verifying...
+                </>
+              ) : (
+                "Verify & Login"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>
+              Didn't receive the code?{" "}
+              <button
+                className={`auth-link ${resendCooldown > 0 ? "disabled" : ""}`}
+                onClick={handleResendSMSOTP}
+                disabled={resendCooldown > 0}
+                type="button"
+              >
+                {resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : "Resend Code"}
+              </button>
+            </p>
+            <p>
+              <button
+                className="auth-link"
+                onClick={handleBackToLogin}
+                type="button"
+              >
+                ← Back to Login
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // COMPLETE PROFILE STEP (new user after SMS OTP verification)
+  if (step === "complete-profile") {
+    return (
+      <div className="auth-overlay">
+        <div className="auth-modal">
+          <div className="auth-header">
+            <h2>Complete Your Profile</h2>
+            <p>Phone verified! Just a few more details to get started.</p>
+            {onClose && (
+              <button className="auth-close" onClick={onClose}>
+                ×
+              </button>
+            )}
+          </div>
+
+          <form className="auth-form" onSubmit={handleCompleteProfile}>
+            {error && (
+              <div className="auth-error">
+                <span>⚠</span>
+                {error}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="profileName">Full Name</label>
+              <input
+                type="text"
+                id="profileName"
+                name="profileName"
+                value={formData.profileName}
+                onChange={handleInputChange}
+                placeholder="Enter your full name"
+                required
+                style={{ marginBottom: "10px" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profileEmail">Email Address</label>
+              <input
+                type="email"
+                id="profileEmail"
+                name="profileEmail"
+                value={formData.profileEmail}
+                onChange={handleInputChange}
+                placeholder="Enter your email address"
+                required
+                style={{ marginBottom: "10px" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                disabled
+                style={{ marginBottom: "10px", opacity: 0.7 }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>
+              <button
+                className="auth-link"
+                onClick={handleBackToLogin}
+                type="button"
+              >
+                ← Back to Login
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === "otp-verify" || step === "forgot-otp") {
     const isForgotFlow = step === "forgot-otp";
@@ -693,7 +863,6 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
             >
               Email OTP
             </button>
-            {/* SMS OTP BUTTON (TEMPORARILY DISABLED)
             <button
               type="button"
               className={`method-option ${
@@ -703,22 +872,17 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
             >
               SMS OTP
             </button>
-            */}
           </div>
 
           <form
             onSubmit={
               loginMethod === "password"
                 ? handlePasswordLogin
-                : (e) => handleSendOTP(e, false)
-              /* SMS OTP SUBMIT HANDLER (TEMPORARILY DISABLED)
                 : loginMethod === "sms"
                 ? handleSendSMSOTP
                 : (e) => handleSendOTP(e, false)
-              */
             }
           >
-            {/* SMS PHONE INPUT (TEMPORARILY DISABLED)
             {loginMethod === "sms" ? (
               <div className="form-group">
                 <label htmlFor="phone">Phone Number</label>
@@ -728,13 +892,12 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your 10-digit mobile number"
                   required
                   style={{ marginBottom: "10px" }}
                 />
               </div>
             ) : (
-            */}
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
                 <input
@@ -749,7 +912,7 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                   style={{ marginBottom: "10px" }}
                 />
               </div>
-            {/* SMS PHONE INPUT CLOSING (TEMPORARILY DISABLED) )} */}
+            )}
 
             {loginMethod === "password" && (
               <>
@@ -791,6 +954,8 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                 </>
               ) : loginMethod === "password" ? (
                 "Sign In"
+              ) : loginMethod === "sms" ? (
+                "Send SMS OTP"
               ) : (
                 "Send OTP"
               )}
