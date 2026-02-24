@@ -13,11 +13,13 @@ import {
 
 const Login = ({ onClose, onSwitchToSignUp }) => {
   const [loginMethod, setLoginMethod] = useState("password"); // 'password', 'otp', or 'sms'
-  const [step, setStep] = useState("login"); // 'login', 'otp-verify', 'sms-verify', 'forgot', 'forgot-otp'
+  const [step, setStep] = useState("login"); // 'login', 'otp-verify', 'sms-verify', 'complete-profile', 'forgot', 'forgot-otp'
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     phone: "",
+    profileName: "",
+    profileEmail: "",
   });
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -275,12 +277,20 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
       }
 
       if (data.success) {
-        // If backend returned a token + user, log them in
+        // If backend returned a token + user, log them in (existing user)
         if (data.data?.token && data.data?.user) {
           login(data.data.user, data.data.token);
           onClose && onClose();
+        } else if (data.data?.profileRequired) {
+          // New user — phone verified but no account, show profile form
+          setFormData((prev) => ({
+            ...prev,
+            phone: data.data.tempPhone || prev.phone,
+          }));
+          setError("");
+          setStep("complete-profile");
         } else {
-          // Phone verified but no account linked — inform user
+          // Fallback — shouldn't happen with updated backend
           setError("");
           setStep("login");
           setLoginMethod("password");
@@ -303,6 +313,52 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
     if (resendCooldown > 0) return;
     const fakeEvent = { preventDefault: () => {} };
     handleSendSMSOTP(fakeEvent);
+  };
+
+  // ===== COMPLETE PROFILE HANDLER (new user after SMS OTP) =====
+  const handleCompleteProfile = async (e) => {
+    e.preventDefault();
+
+    if (!formData.profileName || !formData.profileEmail) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        buildApiUrl(API_CONFIG.AUTH.COMPLETE_PROFILE),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.profileName,
+            email: formData.profileEmail,
+            phone: formData.phone,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Failed to create profile");
+      }
+
+      if (data.success && data.data?.token && data.data?.user) {
+        login(data.data.user, data.data.token);
+        onClose && onClose();
+      } else {
+        throw new Error(data.error?.message || "Something went wrong");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to complete profile. Please try again.");
+      console.error("Complete profile error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOTPLogin = async (e) => {
@@ -478,6 +534,99 @@ const Login = ({ onClose, onSwitchToSignUp }) => {
                   : "Resend Code"}
               </button>
             </p>
+            <p>
+              <button
+                className="auth-link"
+                onClick={handleBackToLogin}
+                type="button"
+              >
+                ← Back to Login
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // COMPLETE PROFILE STEP (new user after SMS OTP verification)
+  if (step === "complete-profile") {
+    return (
+      <div className="auth-overlay">
+        <div className="auth-modal">
+          <div className="auth-header">
+            <h2>Complete Your Profile</h2>
+            <p>Phone verified! Just a few more details to get started.</p>
+            {onClose && (
+              <button className="auth-close" onClick={onClose}>
+                ×
+              </button>
+            )}
+          </div>
+
+          <form className="auth-form" onSubmit={handleCompleteProfile}>
+            {error && (
+              <div className="auth-error">
+                <span>⚠</span>
+                {error}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="profileName">Full Name</label>
+              <input
+                type="text"
+                id="profileName"
+                name="profileName"
+                value={formData.profileName}
+                onChange={handleInputChange}
+                placeholder="Enter your full name"
+                required
+                style={{ marginBottom: "10px" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profileEmail">Email Address</label>
+              <input
+                type="email"
+                id="profileEmail"
+                name="profileEmail"
+                value={formData.profileEmail}
+                onChange={handleInputChange}
+                placeholder="Enter your email address"
+                required
+                style={{ marginBottom: "10px" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                disabled
+                style={{ marginBottom: "10px", opacity: 0.7 }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
             <p>
               <button
                 className="auth-link"

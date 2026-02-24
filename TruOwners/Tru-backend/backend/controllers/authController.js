@@ -14,6 +14,16 @@ const generateToken = async (user) => {
   return jwt.sign({ user }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+// Normalize phone to 10-digit Indian format for consistent DB lookups
+const normalizePhone = (phone) => {
+  if (!phone) return null;
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length === 12 && cleaned.startsWith("91")) return cleaned.substring(2);
+  if (cleaned.length === 11 && cleaned.startsWith("0")) return cleaned.substring(1);
+  if (cleaned.length === 10) return cleaned;
+  return null;
+};
+
 // Register user
 const register = async (req, res) => {
   const {
@@ -838,39 +848,166 @@ const verifySMSOTP = async (req, res) => {
 
     console.log(`✅ [SMS OTP Verify] OTP verified successfully for ${phone}`);
 
-    // Find user by phone number
-    let user = await User.findOne({ phone });
-    let token = null;
+    // Normalize phone for consistent DB lookup
+    const normalized = normalizePhone(phone);
+    const phoneVariants = normalized
+      ? [normalized, `91${normalized}`, `+91${normalized}`, phone]
+      : [phone];
+
+    // Find user by any phone format variant (single query)
+    const user = await User.findOne({ phone: { $in: phoneVariants } });
 
     if (user) {
-      // If user exists, generate token for login
-      token = await generateToken(user);
-      console.log(`✅ [SMS OTP Verify] User found, token generated for ${phone}`);
+      // CASE A: Existing user — generate JWT and log them in
+      const token = await generateToken(user);
+
+      // Fetch active subscription
+      const subscription = await UserSubscription.findOne({
+        user: user._id,
+        status: "active",
+      }).populate("plan");
+
+      let activeSubscription = null;
+      if (subscription) {
+        if (new Date() > subscription.endDate) {
+          subscription.status = "expired";
+          await subscription.save();
+        } else {
+          activeSubscription = subscription;
+        }
+      }
+
+      return res.status(200).json({
+        statusCode: 200,
+        success: true,
+        error: null,
+        data: {
+          message: "Login successful",
+          token,
+          profileRequired: false,
+          user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            phone: user.phone,
+            isVerified: user.verified,
+            subscription: activeSubscription,
+          },
+        },
+      });
     }
 
+    // CASE B: New user — phone verified but no account yet
     res.status(200).json({
       statusCode: 200,
       success: true,
       error: null,
       data: {
-        message: "OTP verified successfully",
-        phone,
-        verified: true,
-        token: token || undefined,
-        user: user
-          ? {
-              id: user._id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              phone: user.phone,
-              isVerified: user.verified,
-            }
-          : undefined,
+        message: "OTP verified. Please complete your profile to continue.",
+        profileRequired: true,
+        tempPhone: normalized || phone,
       },
     });
   } catch (error) {
     console.error("❌ [SMS OTP Verify] Unhandled error:", error);
+    res.status(500).json({
+      statusCode: 500,
+      success: false,
+      error: { message: "Internal server error", details: error.message },
+      data: null,
+    });
+  }
+};
+
+// Complete profile for SMS-first registration (new user after OTP verify)
+const completeProfile = async (req, res) => {
+  const { name, email, phone } = req.body;
+
+  try {
+    if (!name || !email || !phone) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Name, email, and phone are required" },
+        data: null,
+      });
+    }
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Invalid email format" },
+        data: null,
+      });
+    }
+
+    const normalized = normalizePhone(phone);
+    if (!normalized) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Invalid phone number" },
+        data: null,
+      });
+    }
+
+    // Check if email already taken by a verified user
+    const existingEmail = await User.findOne({ email, verified: true });
+    if (existingEmail) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Email already in use" },
+        data: null,
+      });
+    }
+
+    // Check if phone already linked to an account
+    const phoneVariants = [normalized, `91${normalized}`, `+91${normalized}`];
+    const existingPhone = await User.findOne({ phone: { $in: phoneVariants } });
+    if (existingPhone) {
+      return res.status(400).json({
+        statusCode: 400,
+        success: false,
+        error: { message: "Phone number already linked to an account" },
+        data: null,
+      });
+    }
+
+    // Create user — phone-verified, no password needed
+    const user = new User({
+      name,
+      email,
+      phone: normalized,
+      verified: true,
+      role: ROLES.USER,
+    });
+    await user.save();
+
+    const token = await generateToken(user);
+
+    res.status(201).json({
+      statusCode: 201,
+      success: true,
+      error: null,
+      data: {
+        message: "Profile created successfully",
+        token,
+        profileRequired: false,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          phone: user.phone,
+          isVerified: user.verified,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Complete profile error:", error);
     res.status(500).json({
       statusCode: 500,
       success: false,
@@ -893,4 +1030,5 @@ module.exports = {
   deleteUser,
   sendSMSOTP,
   verifySMSOTP,
+  completeProfile,
 };

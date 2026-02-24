@@ -24,6 +24,9 @@ router.post('/sms/send-otp', authController.sendSMSOTP);
 // SMS OTP - Verify
 router.post('/sms/verify-otp', authController.verifySMSOTP);
 
+// SMS - Complete profile (new user after phone verification)
+router.post('/complete-profile', authController.completeProfile);
+
 // Forgot Password - Request OTP
 router.post('/forgot-password', authController.forgotPasswordRequest);
 
