@@ -13,6 +13,11 @@ export const API_CONFIG = {
     LOGIN_OTP: "/auth/login/otp",
     LOGIN_PASSWORD: "/auth/login/password",
 
+    // SMS OTP flow
+    SMS_SEND_OTP: "/auth/sms/send-otp",
+    SMS_VERIFY_OTP: "/auth/sms/verify-otp",
+    COMPLETE_PROFILE: "/auth/complete-profile",
+
     // Forgot password flow
     FORGOT_PASSWORD: "/auth/forgot-password", // Send OTP for password reset
     RESET_PASSWORD: "/auth/reset-password", // Verify OTP & set new password
