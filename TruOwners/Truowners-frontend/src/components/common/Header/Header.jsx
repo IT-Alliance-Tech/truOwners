@@ -12,8 +12,6 @@ import defaultProfilePic from '../../../assets/images/defaultProfile.png'
 import { Link } from 'react-router-dom'
 import './Header.css'
 import logoimage from "../../../assets/images/logoimage.jpg"
-import EditProfile from '../../pages/Profile/EditProfile'
-import UserEditProfile from '../../pages/Profile/UserEditProfile'
 
 
 
@@ -46,21 +44,7 @@ import {
 
 const Header = () => {
 
-  const [showEditProfile, setShowEditProfile] = useState(false)
 
-
-  const handleEditProfileClick = () => {
-    setShowEditProfile(true)
-    handleUserMenuClose()
-  }
-
-  const handleSaveProfile = (updatedData) => {
-    console.log("Profile Updated:", updatedData)
-    // TODO: call API to save changes
-    setShowEditProfile(false)
-  }
-
-  const [showUserEditProfile, setShowUserEditProfile] = useState(false)
 
 
 
@@ -642,13 +626,6 @@ const Header = () => {
                         {isUser && (
                           <>
                             <MenuItem
-                              onClick={() => { setShowUserEditProfile(true); handleUserMenuClose(); }}
-                              sx={{ padding: '12px 20px', '&:hover': { backgroundColor: '#f5f5f5' } }}
-                            >
-                              <PersonIcon sx={{ mr: 2, fontSize: 20, color: '#1976d2' }} />
-                              <Typography variant="body2">Edit Profile</Typography>
-                            </MenuItem>
-                            <MenuItem
                               onClick={handleWishlistClick}
                               sx={{
                                 padding: '12px 20px',
@@ -755,14 +732,6 @@ const Header = () => {
 
                         {isOwner && (
                           <>
-                            <MenuItem
-                              onClick={() => { setShowEditProfile(true); handleUserMenuClose(); }}
-                              sx={{ padding: '12px 20px', '&:hover': { backgroundColor: '#f5f5f5' } }}
-                            >
-                              <PersonIcon sx={{ mr: 2, fontSize: 20, color: '#1976d2' }} />
-                              <Typography variant="body2">Edit Profile</Typography>
-                            </MenuItem>
-
                             <MenuItem
                               onClick={handleAddPropertyClick}
                               sx={{ padding: '12px 20px', '&:hover': { backgroundColor: '#f5f5f5' } }}
@@ -997,25 +966,7 @@ const Header = () => {
       )}
 
 
-      {showEditProfile && (
-        <EditProfile
-          user={user}
-          onClose={() => setShowEditProfile(false)}
-          onSave={handleSaveProfile}
-        />
-      )}
 
-      {showUserEditProfile && (
-        <UserEditProfile
-          user={user}
-          onClose={() => setShowUserEditProfile(false)}
-          onSave={(updatedData) => {
-            console.log("User profile updated:", updatedData)
-            // TODO: call your API here
-            setShowUserEditProfile(false)
-          }}
-        />
-      )}
 
 
 
