@@ -17,8 +17,33 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// --- Dynamic CORS Configuration ---
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((url) => url.trim())
+  : [];
+
+console.log("✅ Allowed CORS origins:", allowedOrigins);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, mobile apps, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      console.log(`🟢 CORS allowed: ${origin}`);
+      return callback(null, true);
+    }
+
+    console.log(`🔴 CORS rejected: ${origin}`);
+    return callback(null, false);
+  },
+  credentials: true,
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Enhanced Request Logging Middleware

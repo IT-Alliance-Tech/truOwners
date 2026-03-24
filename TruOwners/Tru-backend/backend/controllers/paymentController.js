@@ -3,7 +3,7 @@ const {
   Env,
   StandardCheckoutPayRequest,
   MetaInfo,
-} = require("pg-sdk-node");
+} = require("phonepe-pg-sdk-node");
 const { randomUUID } = require("crypto");
 const Payment = require("../models/Payment");
 const UserSubscription = require("../models/UserSubscription");
