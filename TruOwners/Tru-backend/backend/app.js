@@ -43,6 +43,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root health check for Render
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Routes
 app.use("/api", commonRoutes);
 app.use("/api/auth", authRoutes);
